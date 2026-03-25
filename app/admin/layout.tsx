@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { UserButton, useUser } from '@clerk/nextjs';
 import {
   LayoutDashboard,
   FileText,
@@ -34,7 +35,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMapSection = pathname.startsWith('/peta') || pathname.startsWith('/admin/pengaturan-peta');
+  const isUmkmSection = pathname.startsWith('/admin/umkm');
   const [mapOpen, setMapOpen] = useState(isMapSection);
+  const [umkmOpen, setUmkmOpen] = useState(isUmkmSection);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -43,17 +46,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Keep map group open when navigating within it
   useEffect(() => {
     if (isMapSection) setMapOpen(true);
-  }, [isMapSection]);
+    if (isUmkmSection) setUmkmOpen(true);
+  }, [isMapSection, isUmkmSection]);
 
   const navItems = [
     { href: '/admin', label: t('nav_dashboard'), icon: LayoutDashboard, exact: true },
     { href: '/admin/laporan', label: t('nav_laporan'), icon: FileText },
-    { href: '/admin/umkm', label: t('nav_umkm'), icon: Store },
     { href: '/admin/transparansi', label: t('nav_transparansi'), icon: Landmark },
     { href: '/admin/lowongan', label: t('nav_lowongan'), icon: Briefcase },
     { href: '/admin/edukasi', label: t('nav_edukasi'), icon: GraduationCap },
     { href: '/admin/gotong-royong', label: t('nav_gotong_royong'), icon: Users },
     { href: '/admin/komunitas', label: t('nav_komunitas'), icon: BookOpen },
+  ];
+
+  const umkmSubItems = [
+    { href: '/admin/umkm', label: 'Produk UMKM', icon: Store },
+    { href: '/admin/umkm/toko', label: 'Manajemen Toko', icon: Settings },
   ];
 
   const mapSubItems = [
@@ -94,6 +102,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Link>
           );
         })}
+
+        {/* UMKM Group (Collapsible) */}
+        <div>
+          <button
+            onClick={() => setUmkmOpen(o => !o)}
+            className={cn(
+              'w-full flex items-center gap-4 px-4 py-3.5 text-[10px] font-bold uppercase tracking-widest transition-all',
+              isUmkmSection
+                ? 'text-primary-950 bg-gray-50 border border-gray-200'
+                : 'text-gray-500 hover:text-primary-800 hover:bg-gray-50 border border-transparent'
+            )}
+          >
+            <Store className={cn('w-4 h-4 shrink-0', isUmkmSection ? 'text-primary-800' : 'text-gray-400')} />
+            <span className="flex-1 text-left">{t('nav_umkm')}</span>
+            <ChevronDown className={cn('w-3.5 h-3.5 transition-transform duration-200', umkmOpen ? 'rotate-180' : '')} />
+          </button>
+
+          <div className={cn('overflow-hidden transition-all duration-200', umkmOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0')}>
+            {umkmSubItems.map((sub) => {
+              const subActive = pathname === sub.href || (sub.href !== '/admin/umkm' && pathname.startsWith(sub.href));
+              const exactActive = sub.href === '/admin/umkm' ? pathname === '/admin/umkm' : subActive;
+              return (
+                <Link
+                  key={sub.href}
+                  href={sub.href}
+                  className={cn(
+                    'flex items-center gap-4 pl-12 pr-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-all',
+                    exactActive
+                      ? 'text-primary-950 bg-primary-50/50 border-l-2 border-primary-600'
+                      : 'text-gray-400 hover:text-primary-800 hover:bg-gray-50 border-l-2 border-transparent'
+                  )}
+                >
+                  <sub.icon className={cn('w-3.5 h-3.5 shrink-0', exactActive ? 'text-primary-800' : 'text-gray-400')} />
+                  <span>{sub.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Peta Group (Collapsible) */}
         <div>
@@ -172,21 +219,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header Toggle */}
-        <div className="md:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 shrink-0 flex items-center justify-between shadow-sm">
+        {/* Mobile & Desktop Header with Profile */}
+        <header className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 md:px-8 py-3 shrink-0 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
-            <button onClick={() => setMobileOpen(true)} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <Menu className="w-5 h-5" />
             </button>
-            <Link href="/">
+            <div className="md:hidden">
               <Image src="/logo.webp" alt="DesaMind" width={110} height={28} className="h-6 w-auto object-contain" />
-            </Link>
+            </div>
+            {/* Desktop breadcrumb/title */}
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-primary-50 rounded-full border border-primary-100">
+              <Sparkles className="w-3 h-3 text-primary-600" />
+              <span className="text-[10px] uppercase tracking-widest font-bold text-primary-700">Administrator</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-primary-50 rounded-full border border-primary-100">
-            <Sparkles className="w-3 h-3 text-primary-600" />
-            <span className="text-[10px] uppercase tracking-widest font-bold text-primary-700">{t('admin')}</span>
+          
+          <div className="flex items-center gap-4">
+             <div className="hidden sm:flex flex-col items-end">
+                <span className="text-sm font-bold text-gray-800">Admin DesaMind</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-primary-600">Super Admin</span>
+             </div>
+             <UserButton appearance={{ elements: { avatarBox: "w-8 h-8" } }} />
           </div>
-        </div>
+        </header>
 
         {/* Page Content */}
         <div className="p-4 md:p-8 flex-1 overflow-auto">

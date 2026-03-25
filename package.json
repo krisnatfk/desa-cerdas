@@ -20,6 +20,8 @@
     "@types/uuid": "^10.0.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
+    "imagekit": "^6.0.0",
+    "imagekitio-react": "^4.3.0",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "lucide-react": "^0.577.0",

@@ -1,29 +1,41 @@
 'use client';
 /**
- * app/umkm/page.tsx — Redesigned v2 with banner image
+ * app/umkm/page.tsx — Redesigned v3 with Cart Integration
  */
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { Search, Store, Plus, Star } from 'lucide-react';
+import { Search, Store, Star, ShoppingBag } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/ui/ProductCard';
+import CartDrawer from '@/components/marketplace/CartDrawer';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 export default function UMKMPage() {
   const t = useTranslations('umkm');
+  const router = useRouter();
   const CATEGORIES = [t('cat_all'), t('cat_food'), t('cat_crafts'), t('cat_agri'), t('cat_fashion'), t('cat_services')];
-  
+
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Semua');
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     async function loadProducts() {
       if (!supabase) return setLoading(false);
-      const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      if (data) setProducts(data);
+      const { data } = await supabase.from('products').select('*, reviews(rating)').order('created_at', { ascending: false });
+      if (data) {
+        const productsWithRating = data.map((p: any) => {
+          const revs = p.reviews || [];
+          const reviews_count = revs.length;
+          const rating = reviews_count > 0 ? (revs.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews_count).toFixed(1) : 0;
+          return { ...p, rating: Number(rating), reviews_count };
+        });
+        setProducts(productsWithRating);
+      }
       setLoading(false);
     }
     loadProducts();
@@ -31,25 +43,60 @@ export default function UMKMPage() {
 
   const featured = products.filter((p) => p.featured);
   const filtered = products.filter((p) => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.seller_name.toLowerCase().includes(search.toLowerCase());
+    const matchSearch =
+      p.name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.seller_name?.toLowerCase().includes(search.toLowerCase());
     const matchCat = category === t('cat_all') || p.category === category;
     return matchSearch && matchCat;
   });
 
-
   return (
     <div>
-      {/* ── Banner matching Community Development ── */}
-      <div className="bg-primary-900 pt-28 pb-16">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-          <div className="flex flex-col justify-center max-w-md lg:ml-12 text-white order-1 lg:order-2 text-center lg:text-left">
-            <h1 className="text-4xl md:text-[42px] font-semibold leading-tight mb-4">
-              {t('title_1')} <br className="hidden lg:block"/> {t('title_2')}
+      {/* ── Minimalist Elegant Banner ── */}
+      <div className="relative bg-bg pt-32 pb-20 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1.5px,transparent_1.5px)] [background-size:24px_24px] opacity-60" />
+
+        <div className="relative max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-8 items-center">
+          {/* Left Text */}
+          <div className="lg:col-span-5 flex flex-col justify-center text-center lg:text-left order-2 lg:order-1 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 border border-primary-100 mb-6 mx-auto lg:mx-0 w-max">
+              <ShoppingBag className="w-4 h-4 text-primary-600" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-primary-700">Marketplace Desa</span>
+            </div>
+
+            <h1 className="text-4xl md:text-5xl lg:text-[54px] font-semibold text-primary-950 leading-[1.1] mb-6 tracking-tight">
+              {t('title_1')} <br className="hidden lg:block" /> {t('title_2')}
             </h1>
-            <p className="text-primary-200 text-xs tracking-wider mb-6 lg:mb-2">{t('subtitle')}</p>
+
+            <p className="text-gray-500 text-sm md:text-base leading-relaxed max-w-md mx-auto lg:mx-0">
+              {t('subtitle')} Temukan produk unggulan dan kerajinan lokal berkualitas tinggi langsung dari tangan kreatif warga desa.
+            </p>
           </div>
-          <div className="w-full aspect-[21/9] lg:aspect-[4/3] relative rounded-none shadow-xl order-2 lg:order-1">
-            <Image src="/umkm-banner.jpg" alt="Produk UMKM" fill className="object-cover" priority />
+
+          {/* Right Image Container */}
+          <div className="lg:col-span-7 relative order-1 lg:order-2">
+            <div className="relative w-full aspect-[4/3] lg:aspect-[16/10] rounded-2xl overflow-hidden shadow-2xl shadow-primary-900/10">
+              <Image
+                src="/umkm-banner.jpg"
+                alt="Produk UMKM"
+                fill
+                className="object-cover hover:scale-105 transition-transform duration-1000"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary-900/20 to-transparent mix-blend-overlay" />
+            </div>
+
+            <div className="absolute -bottom-6 -left-4 lg:-left-10 bg-white/95 backdrop-blur-md px-5 py-4 rounded-2xl shadow-xl border border-black/5 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 z-20">
+              <div className="bg-amber-50 p-3 rounded-xl border border-amber-100">
+                <Store className="w-6 h-6 text-amber-600" />
+              </div>
+              <div className="pr-2">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Terverifikasi</p>
+                <p className="text-sm font-bold text-gray-800">
+                  {loading ? '...' : products.length}+ UMKM Lokal
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -82,7 +129,7 @@ export default function UMKMPage() {
           </div>
         )}
 
-        {/* Filters and search area matching minimalist layout */}
+        {/* Filters and search */}
         <div className="mb-10 text-center lg:text-left">
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-6">Filter Kategori</p>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-200 pb-6">
@@ -125,11 +172,21 @@ export default function UMKMPage() {
         <div className="mt-20 border-t border-gray-200 pt-16 flex flex-col items-center">
           <h3 className="font-bold text-2xl text-primary-950 tracking-tight mb-4">{t('cta_title')}</h3>
           <p className="text-gray-500 text-xs max-w-md text-center leading-relaxed mb-8">{t('cta_desc')}</p>
-          <a href="/auth/register" className="bg-primary-800 hover:bg-primary-950 text-white text-[10px] font-bold uppercase tracking-widest px-8 py-3 transition-colors">
+          <a href="/umkm/daftar" className="bg-primary-800 hover:bg-primary-950 text-white text-[10px] font-bold uppercase tracking-widest px-8 py-3 transition-colors">
             {t('cta_btn')}
           </a>
         </div>
       </div>
+
+      {/* Cart Integration */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        onCheckout={() => {
+          setIsCartOpen(false);
+          router.push('/umkm/checkout');
+        }}
+      />
     </div>
   );
 }

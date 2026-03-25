@@ -10,13 +10,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   MapPin, LayoutDashboard,  MessageSquare, Bot, ShoppingBag,
   GraduationCap, Users, ShieldCheck,
-  TrendingUp, Map, Briefcase, Activity, Plus, Menu, X, ChevronDown, ShieldAlert, LogIn, Instagram, Linkedin, Zap, Landmark, Newspaper
+  TrendingUp, Map, Briefcase, Activity, Plus, Menu, X, ChevronDown, ShieldAlert, LogIn, Instagram, Linkedin, Zap, Landmark, Newspaper, ShoppingCart, Store
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { setLocaleCookie } from '@/app/actions/locale';
 import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { useCart } from '@/components/marketplace/CartContext';
 
 // ── Nav structure ──────────────────────────────────────────────
 type NavItem = {
@@ -145,6 +146,7 @@ export function Navbar() {
   const pathname = usePathname();
   const { isSignedIn, user } = useUser();
   const t = useTranslations('navbar');
+  const { count } = useCart();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 12);
@@ -153,7 +155,7 @@ export function Navbar() {
   }, []);
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
-  if (pathname.startsWith('/admin')) {
+  if (pathname.startsWith('/admin') || pathname.startsWith('/umkm/toko')) {
     return null;
   }
 
@@ -202,6 +204,22 @@ export function Navbar() {
 
             <div className="w-px h-3 bg-gray-300 hidden xl:block" />
 
+            {/* Cart icon */}
+            <Link
+              href="/umkm/checkout"
+              className="relative flex items-center text-gray-500 hover:text-primary-900 transition-colors"
+              title="Keranjang"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {count > 0 && (
+                <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
+                  {count}
+                </span>
+              )}
+            </Link>
+
+            <div className="w-px h-3 bg-gray-300 hidden xl:block" />
+
             {!isSignedIn ? (
               <Link href="/auth/login">
                 <button className="text-[11px] font-bold tracking-widest uppercase text-gray-400 hover:text-primary-900 transition-colors">
@@ -218,19 +236,54 @@ export function Navbar() {
                       labelIcon={<LayoutDashboard className="w-4 h-4" />}
                     />
                   )}
+                  <UserButton.Link
+                    href="/umkm/toko"
+                    label="Toko Saya"
+                    labelIcon={<Store className="w-4 h-4" />}
+                  />
+                  <UserButton.Link
+                    href="/umkm/pesanan"
+                    label="Pesanan Saya"
+                    labelIcon={<ShoppingBag className="w-4 h-4" />}
+                  />
                 </UserButton.MenuItems>
               </UserButton>
             )}
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="lg:hidden p-2 rounded-xl hover:bg-gray-100 transition ml-auto"
-            aria-label="Toggle menu"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          {/* Mobile actions (User Profile + Hamburger) */}
+          <div className="lg:hidden flex items-center gap-3 ml-auto">
+            {isSignedIn && (
+              <UserButton>
+                <UserButton.MenuItems>
+                  {user?.publicMetadata?.isAdmin === true && (
+                    <UserButton.Link
+                      href="/admin"
+                      label={t('admin')}
+                      labelIcon={<LayoutDashboard className="w-4 h-4" />}
+                    />
+                  )}
+                  <UserButton.Link
+                    href="/umkm/toko"
+                    label="Toko Saya"
+                    labelIcon={<Store className="w-4 h-4" />}
+                  />
+                  <UserButton.Link
+                    href="/umkm/pesanan"
+                    label="Pesanan Saya"
+                    labelIcon={<ShoppingBag className="w-4 h-4" />}
+                  />
+                </UserButton.MenuItems>
+              </UserButton>
+            )}
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="p-2 rounded-xl hover:bg-gray-100 transition"
+              aria-label="Toggle menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -304,16 +357,11 @@ export function Navbar() {
             </div>
 
             {/* Masuk as normal menu link */}
-            {!isSignedIn ? (
+            {!isSignedIn && (
               <div className="border-b border-gray-100 pb-2 mb-2">
                 <Link href="/auth/login" onClick={() => setMobileOpen(false)} className="flex items-center py-4 text-[13px] font-bold tracking-widest uppercase text-gray-800 hover:text-primary-700 transition-colors">
                   {t('login')}
                 </Link>
-              </div>
-            ) : (
-              <div className="py-6 flex items-center gap-3">
-                <UserButton />
-                <span className="text-[13px] font-bold tracking-widest uppercase text-gray-800">Akun Saya</span>
               </div>
             )}
           </div>

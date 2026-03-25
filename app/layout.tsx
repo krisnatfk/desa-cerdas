@@ -5,6 +5,7 @@ import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { SOSButton } from '@/components/ui/SOSButton';
+import { CartProvider } from '@/components/marketplace/CartContext';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 
@@ -25,11 +26,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <html lang={locale}>
         <body className={`flex flex-col min-h-screen bg-bg ${raleway.className}`}>
           <NextIntlClientProvider messages={messages} locale={locale}>
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-            {/* Global floating SOS emergency button — visible on all pages */}
-            <SOSButton />
+            <CartProvider>
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
+              {/* Global floating SOS emergency button — visible on all pages */}
+              <SOSButton />
+            </CartProvider>
           </NextIntlClientProvider>
         </body>
       </html>

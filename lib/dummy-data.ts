@@ -35,6 +35,7 @@ export type Product = {
   featured?: boolean;
   sales_count?: number;
   rating?: number;
+  reviews_count?: number;
 };
 
 export type Article = {

@@ -22,6 +22,38 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'via.placeholder.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'th.bing.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.bing.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'tse1.mm.bing.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'tse2.mm.bing.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'tse3.mm.bing.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'tse4.mm.bing.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.clerk.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ik.imagekit.io',
+      },
     ],
   },
 };

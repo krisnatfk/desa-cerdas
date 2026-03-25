@@ -21,6 +21,7 @@ export default function HomePage() {
   const t = useTranslations('home');
   const [latestReports, setLatestReports] = useState<any[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
+  const [stats, setStats] = useState({ reports: 0, products: 0, resolved: 0 });
 
   useEffect(() => {
     fetch('/api/reports')
@@ -30,6 +31,15 @@ export default function HomePage() {
       })
       .catch(() => setLatestReports([]))
       .finally(() => setLoadingReports(false));
+
+    fetch('/api/stats')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.reports === 'number') {
+          setStats(data);
+        }
+      })
+      .catch((err) => console.error('Failed to load stats', err));
   }, []);
 
   return (
@@ -41,34 +51,11 @@ export default function HomePage() {
         <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 w-[800px] h-[800px] bg-primary-100/40 rounded-full blur-[100px] -z-10 pointer-events-none" />
         <div className="absolute bottom-0 left-0 translate-y-1/4 -translate-x-1/4 w-[600px] h-[600px] bg-primary-50/50 rounded-full blur-[80px] -z-10 pointer-events-none" />
         
-        <div className="relative z-10 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-          {/* Text Content */}
-          <div className="lg:col-span-5 flex flex-col justify-center order-2 lg:order-1 relative z-20">
-            <div className="inline-flex items-center space-x-2 bg-white/70 backdrop-blur border border-black/5 px-3 py-1.5 rounded-full w-fit mb-6 shadow-sm">
-              <span className="flex h-2 w-2 rounded-full bg-primary-600"></span>
-              <span className="text-[11px] font-bold text-gray-600 tracking-widest uppercase">{t('hero.badge_1')}</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-[52px] leading-[1.15] font-bold text-gray-900 mb-6 tracking-tight">
-              {t('hero.title_1')} <span className="text-primary-800 block mt-1">{t('hero.title_2')}</span>
-            </h1>
-            <p className="text-gray-600 text-[15px] md:text-lg leading-relaxed font-light mb-10 max-w-lg">
-              {t('hero.desc')}
-            </p>
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-              {/* Primary Button */}
-              <Link href="/laporan" className="flex items-center justify-center px-8 py-3.5 text-sm font-medium rounded-full transition-all duration-300 w-full sm:w-auto text-center shadow-md hover:-translate-y-0.5 bg-primary-900 hover:bg-primary-950 text-white shadow-primary-900/20 hover:shadow-primary-900/40 border border-primary-900 border-b-primary-950">
-                {t('hero.cta_report')}
-              </Link>
-              {/* Secondary Button */}
-              <Link href="/UMKM" className="flex items-center justify-center px-8 py-3.5 text-sm font-medium rounded-full transition-all duration-300 w-full sm:w-auto text-center shadow-md hover:-translate-y-0.5 bg-white/80 hover:bg-white text-gray-700 hover:text-primary-900 shadow-black/5 hover:shadow-black/10 border border-gray-200 border-b-gray-300 backdrop-blur-sm">
-                {t('hero.cta_marketplace')}
-              </Link>
-            </div>
-          </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
           
-          {/* Image Area */}
+          {/* Image Area (Top on Mobile, Right on Desktop) */}
           <div className="lg:col-span-7 relative order-1 lg:order-2">
-            <div className="relative w-full aspect-[4/3] lg:aspect-[16/10] rounded-3xl overflow-hidden shadow-2xl ring-1 ring-black/5 bg-gray-100 z-10">
+            <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] lg:aspect-[16/10] rounded-3xl lg:rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-black/5 bg-gray-100 z-10">
               <Image
                 src="/hero-banner.jpg" 
                 alt="DesaCerdas"
@@ -76,22 +63,46 @@ export default function HomePage() {
                 className="object-cover hover:scale-[1.03] transition-transform duration-[1.5s] ease-out"
                 priority
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
             </div>
             
-            {/* Minimalist Floating Badge 1 */}
-            <div className="absolute -bottom-6 -left-4 lg:-left-10 bg-white/95 backdrop-blur-md px-5 py-4 rounded-2xl shadow-xl border border-black/5 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 pointer-events-none z-20">
-              <div className="bg-green-50 p-3 rounded-xl border border-green-100">
-                <ShieldCheck className="w-6 h-6 text-green-600" />
+            {/* Minimalist Floating Badge 1 (Adjusted for mobile) */}
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 lg:translate-x-0 lg:-bottom-8 lg:-left-12 bg-white/95 backdrop-blur-md px-4 py-3 lg:px-6 lg:py-5 rounded-2xl shadow-xl border border-black/5 flex items-center justify-center gap-3 lg:gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 pointer-events-none z-20 w-[90%] sm:w-max">
+              <div className="bg-green-50 p-2 lg:p-3 rounded-xl border border-green-100 shrink-0">
+                <ShieldCheck className="w-5 h-5 lg:w-6 lg:h-6 text-green-600" />
               </div>
-              <div className="pr-2">
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">{t('hero.badge_2_title')}</p>
-                <p className="text-sm font-bold text-gray-800">{t('hero.badge_2_desc')}</p>
+              <div className="text-left w-full sm:w-auto">
+                <p className="text-[9px] lg:text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5 whitespace-nowrap">{t('hero.badge_2_title')}</p>
+                <p className="text-[12px] lg:text-sm font-bold text-gray-800 whitespace-nowrap">{t('hero.badge_2_desc')}</p>
               </div>
             </div>
 
             {/* Aesthetic Dot Pattern Decorator */}
-            <div className="absolute -top-6 -right-6 w-32 h-32 bg-[radial-gradient(#d1d5db_1.5px,transparent_1.5px)] [background-size:12px_12px] opacity-60 z-0" />
+            <div className="absolute -top-6 -right-6 w-32 h-32 bg-[radial-gradient(#d1d5db_1.5px,transparent_1.5px)] [background-size:12px_12px] opacity-60 z-0 hidden md:block" />
+          </div>
+
+          {/* Text Content (Bottom on Mobile, Left on Desktop) */}
+          <div className="lg:col-span-5 flex flex-col justify-center order-2 lg:order-1 relative z-20 text-center lg:text-left mt-8 lg:mt-0">
+            <div className="inline-flex items-center space-x-2 bg-white/70 backdrop-blur border border-black/5 px-3.5 py-1.5 rounded-full mx-auto lg:mx-0 w-fit mb-5 lg:mb-6 shadow-sm">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-primary-600 animate-pulse"></span>
+              <span className="text-[10px] lg:text-[11px] font-bold text-gray-600 tracking-widest uppercase">{t('hero.badge_1')}</span>
+            </div>
+            <h1 className="text-[32px] sm:text-4xl md:text-5xl lg:text-[52px] leading-[1.2] md:leading-[1.15] font-extrabold text-gray-900 mb-4 lg:mb-6 tracking-tight max-w-2xl mx-auto lg:mx-0">
+              {t('hero.title_1')} <span className="text-primary-800 block mt-1">{t('hero.title_2')}</span>
+            </h1>
+            <p className="text-gray-500 text-[14px] md:text-lg leading-relaxed font-light mb-8 max-w-lg mx-auto lg:mx-0">
+              {t('hero.desc')}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 w-full sm:w-auto">
+              {/* Primary Button */}
+              <Link href="/laporan" className="flex items-center justify-center px-8 py-3.5 text-xs lg:text-sm font-bold tracking-wide uppercase rounded-full transition-all duration-300 w-full sm:w-auto text-center shadow-md hover:-translate-y-0.5 bg-primary-900 hover:bg-primary-950 text-white shadow-primary-900/20 border border-transparent">
+                {t('hero.cta_report')}
+              </Link>
+              {/* Secondary Button */}
+              <Link href="/umkm" className="flex items-center justify-center px-8 py-3.5 text-xs lg:text-sm font-bold tracking-wide uppercase rounded-full transition-all duration-300 w-full sm:w-auto text-center shadow-sm hover:-translate-y-0.5 bg-white hover:bg-gray-50 text-gray-700 hover:text-primary-900 shadow-black/5 border border-gray-200">
+                {t('hero.cta_marketplace')}
+              </Link>
+            </div>
           </div>
         </div>
       </AnimatedSection>
@@ -100,13 +111,32 @@ export default function HomePage() {
       <section className="py-32 bg-bg overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-start">
           {/* Left Text Block */}
-          <AnimatedSection as="div" animation="fade-from-left" className="lg:col-span-5 lg:pr-8 py-4">
-            <h2 className="text-4xl md:text-5xl lg:text-[50px] font-semibold text-primary-950 leading-[1.1] mb-6 tracking-tight">
-              {t('initiatives.title_1')}<br />{t('initiatives.title_2')}
-            </h2>
-            <p className="text-gray-500 text-sm md:text-base leading-relaxed max-w-sm">
-              {t('initiatives.desc')}
-            </p>
+          <AnimatedSection as="div" animation="fade-from-left" className="lg:col-span-5 lg:pr-8 py-4 flex flex-col h-full lg:min-h-[450px]">
+            <div>
+              <h2 className="text-4xl md:text-5xl lg:text-[50px] font-semibold text-primary-950 leading-[1.1] mb-6 tracking-tight">
+                {t('initiatives.title_1')}<br />{t('initiatives.title_2')}
+              </h2>
+              <p className="text-gray-500 text-sm md:text-base leading-relaxed max-w-sm mb-12 lg:mb-0">
+                {t('initiatives.desc')}
+              </p>
+            </div>
+            
+            {/* Map illustration to fill empty space */}
+            <div className="relative w-full max-w-md mx-auto lg:mx-0 mt-auto opacity-70 mix-blend-multiply pt-8">
+              <Image 
+                src="/id.svg" 
+                alt="Peta Indonesia" 
+                width={500}
+                height={250}
+                className="w-full h-auto drop-shadow-sm"
+              />
+              {/* Optional aesthetic markers on the map */}
+              <div className="absolute top-[55%] left-[32%] w-2 h-2 rounded-full bg-accent-500 shadow-[0_0_15px_rgba(245,158,11,1)] animate-ping mix-blend-normal" />
+              <div className="absolute top-[55%] left-[32%] w-2 h-2 rounded-full bg-accent-500 shadow-[0_0_10px_rgba(245,158,11,1)] mix-blend-normal" />
+              
+              <div className="absolute top-[68%] left-[46%] w-1.5 h-1.5 rounded-full bg-primary-600 shadow-[0_0_10px_rgba(5,150,105,0.8)] animate-pulse mix-blend-normal" style={{ animationDelay: '1s'}} />
+              <div className="absolute top-[40%] left-[80%] w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse mix-blend-normal" style={{ animationDelay: '2s'}} />
+            </div>
           </AnimatedSection>
           
           {/* Right Cards Block (2 Cards) */}
@@ -267,15 +297,15 @@ export default function HomePage() {
             
             <div className="grid grid-cols-3 gap-8">
               <div>
-                <p className="text-3xl font-bold text-primary-950 mb-1">13</p>
+                <p className="text-3xl font-bold text-primary-950 mb-1">{stats.reports}</p>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{t('difference.stats.partners')}</p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-primary-950 mb-1">19</p>
+                <p className="text-3xl font-bold text-primary-950 mb-1">{stats.products}</p>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{t('difference.stats.villages')}</p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-primary-950 mb-1">25.428</p>
+                <p className="text-3xl font-bold text-primary-950 mb-1">{stats.resolved}</p>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{t('difference.stats.beneficiaries')}</p>
               </div>
             </div>

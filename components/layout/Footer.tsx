@@ -1,11 +1,12 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import {
   MapPin, Phone, Mail, Facebook, Twitter, Instagram,
   Youtube, ArrowRight, Heart, ExternalLink
 } from 'lucide-react';
-
-
 
 const SOCIAL = [
   { Icon: Facebook, href: '#', label: 'Facebook' },
@@ -15,6 +16,12 @@ const SOCIAL = [
 ];
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  if (pathname.startsWith('/admin') || pathname.startsWith('/umkm/toko')) {
+    return null;
+  }
+
   return (
     <footer className="bg-[#0f1211] text-white mt-auto py-16">
       <div className="max-w-6xl mx-auto px-6 lg:px-8">

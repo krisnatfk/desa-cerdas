@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Store, Trash2, Phone, Plus, Loader2 } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
+import AddProductModal from '@/components/admin/AddProductModal';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -12,6 +13,7 @@ export default function AdminUMKMPage() {
   const t = useTranslations('admin_umkm');
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadProducts() {
@@ -40,7 +42,10 @@ export default function AdminUMKMPage() {
           <h1 className="text-3xl font-semibold text-primary-900 border-l-4 border-primary-600 pl-4">{t('title')}</h1>
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 pl-5">{t('subtitle')}</p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-3 bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary-950 transition-colors">
+        <button 
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary-950 transition-colors"
+        >
           <Plus className="w-4 h-4" />
           {t('add_product')}
         </button>
@@ -110,6 +115,15 @@ export default function AdminUMKMPage() {
           )}
         </div>
       )}
+
+      <AddProductModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSuccess={(newProduct) => {
+          // If we receive the new product, we prepend it to the list
+          setProducts([newProduct, ...products]);
+        }} 
+      />
     </div>
   );
 }
