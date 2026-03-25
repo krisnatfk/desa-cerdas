@@ -1,0 +1,28 @@
+remote: error: GH013: Repository rule violations found for refs/heads/master.        
+remote: 
+remote: - GITHUB PUSH PROTECTION        
+remote:   —————————————————————————————————————————        
+remote:     Resolve the following violations before pushing again        
+remote: 
+remote:     - Push cannot contain secrets        
+remote: 
+remote:             
+remote:      (?) Learn how to resolve a blocked push        
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push        
+remote:             
+remote:             
+remote:       —— Midtrans Production Server Key ————————————————————        
+remote:        locations:        
+remote:          - commit: 810cbe0503171fb1f2e591bb55bd2ae261ceeeee        
+remote:            path: app/api/checkout/route.ts:58        
+remote:          - commit: 810cbe0503171fb1f2e591bb55bd2ae261ceeeee        
+remote:            path: app/api/webhooks/midtrans/route.ts:10        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/krisnatfk/desa-cerdas/security/secret-scanning/unblock-secret/3BRCqj8MYDTVYOeHEGz6wqguOwK        
+remote:             
+remote: 
+remote: 
+To https://github.com/krisnatfk/desa-cerdas.git
+ ! [remote rejected] master -> master (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/krisnatfk/desa-cerdas.git'
