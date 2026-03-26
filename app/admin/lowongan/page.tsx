@@ -1,13 +1,10 @@
 'use client';
-/**
- * app/admin/lowongan/page.tsx
- * Admin: Manajemen Lowongan Kerja
- */
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Briefcase, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
+import { dummyJobs } from '@/lib/dummy-data';
+
 
 type Job = {
   id: string; title: string; company: string; description: string;
@@ -22,8 +19,8 @@ export default function AdminLowonganPage() {
   const t = useTranslations('admin_lowongan');
   const TYPE_LABEL: Record<string, string> = { full_time: t('col_type') === 'Tipe' ? 'Full Time' : 'Full Time', part_time: 'Part Time', freelance: 'Freelance', volunteer: 'Volunteer' };
   
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState<Job[]>(dummyJobs as any[]);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -31,40 +28,38 @@ export default function AdminLowonganPage() {
   const [error, setError] = useState('');
 
   async function load() {
-    setLoading(true);
-    if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from('jobs').select('*').order('created_at', { ascending: false });
-    setJobs(data ?? []);
-    setLoading(false);
+    // no-op for static demo
   }
 
   useEffect(() => { load(); }, []);
 
   async function save() {
-    if (!supabase || !form.title || !form.company) return;
+    if (!form.title || !form.company) return;
     setSaving(true); setError('');
-    const { error: err } = editId
-      ? await supabase.from('jobs').update(form).eq('id', editId)
-      : await supabase.from('jobs').insert(form);
-    setSaving(false);
-    if (err) { setError(err.message); return; }
-    setShowForm(false); setEditId(null); setForm(EMPTY); load();
+    setTimeout(() => {
+      if (editId) {
+        setJobs(prev => prev.map(j => j.id === editId ? { ...j, ...form } as any : j));
+      } else {
+        setJobs(prev => [{ id: Math.random().toString(), created_at: new Date().toISOString(), ...form } as any, ...prev]);
+      }
+      setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
+    }, 500);
   }
 
   async function del(id: string) {
-    if (!supabase || !confirm(t('confirm_delete'))) return;
-    await supabase.from('jobs').delete().eq('id', id); load();
+    if (!confirm(t('confirm_delete'))) return;
+    setJobs(prev => prev.filter(j => j.id !== id));
   }
 
   async function toggleActive(id: string, current: boolean) {
-    if (!supabase) return;
-    await supabase.from('jobs').update({ is_active: !current }).eq('id', id); load();
+    setJobs(prev => prev.map(j => j.id === id ? { ...j, is_active: !current } : j));
   }
 
   function startEdit(j: Job) {
     setForm({ title: j.title, company: j.company, description: j.description, category: j.category, type: j.type, location: j.location ?? '', deadline: j.deadline ?? '', salary_range: j.salary_range ?? '', phone_number: j.phone_number ?? '', is_active: j.is_active });
     setEditId(j.id); setShowForm(true);
   }
+
 
   return (
     <div>

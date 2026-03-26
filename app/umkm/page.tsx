@@ -1,45 +1,23 @@
 'use client';
-/**
- * app/umkm/page.tsx — Redesigned v3 with Cart Integration
- */
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, Store, Star, ShoppingBag } from 'lucide-react';
-import { CardGridSkeleton } from '@/components/ui/Skeletons';
-import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/ui/ProductCard';
 import CartDrawer from '@/components/marketplace/CartDrawer';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { dummyProducts } from '@/lib/dummy-data';
+
 
 export default function UMKMPage() {
   const t = useTranslations('umkm');
   const router = useRouter();
   const CATEGORIES = [t('cat_all'), t('cat_food'), t('cat_crafts'), t('cat_agri'), t('cat_fashion'), t('cat_services')];
 
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products] = useState<any[]>(dummyProducts);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Semua');
   const [isCartOpen, setIsCartOpen] = useState(false);
-
-  useEffect(() => {
-    async function loadProducts() {
-      if (!supabase) return setLoading(false);
-      const { data } = await supabase.from('products').select('*, reviews(rating)').order('created_at', { ascending: false });
-      if (data) {
-        const productsWithRating = data.map((p: any) => {
-          const revs = p.reviews || [];
-          const reviews_count = revs.length;
-          const rating = reviews_count > 0 ? (revs.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews_count).toFixed(1) : 0;
-          return { ...p, rating: Number(rating), reviews_count };
-        });
-        setProducts(productsWithRating);
-      }
-      setLoading(false);
-    }
-    loadProducts();
-  }, []);
 
   const featured = products.filter((p) => p.featured);
   const filtered = products.filter((p) => {
@@ -93,7 +71,7 @@ export default function UMKMPage() {
               <div className="pr-2">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Terverifikasi</p>
                 <p className="text-sm font-bold text-gray-800">
-                  {loading ? '...' : products.length}+ UMKM Lokal
+                  {products.length}+ UMKM Lokal
                 </p>
               </div>
             </div>
@@ -160,13 +138,9 @@ export default function UMKMPage() {
         </div>
 
         {/* All products grid */}
-        {loading ? (
-          <CardGridSkeleton count={8} cols={4} />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
-            {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+          {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
+        </div>
 
         {/* CTA for sellers */}
         <div className="mt-20 border-t border-gray-200 pt-16 flex flex-col items-center">

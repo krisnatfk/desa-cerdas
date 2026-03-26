@@ -1,12 +1,10 @@
 'use client';
-/**
- * app/lowongan/page.tsx — Live Supabase Data
- */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Briefcase, MapPin, Clock, Phone, Search, ArrowRight, CheckCircle } from 'lucide-react';
-import { CardGridSkeleton } from '@/components/ui/Skeletons';
-import { supabase } from '@/lib/supabase';
 import { useTranslations, useLocale } from 'next-intl';
+import Link from 'next/link';
+import { dummyJobs } from '@/lib/dummy-data';
+
 
 type Job = {
   id: string; title: string; company: string; description: string; category: string;
@@ -27,10 +25,10 @@ function JobCard({ job, t, locale }: { job: Job; t: any; locale: string }) {
   const isExpiring = job.deadline ? new Date(job.deadline) <= new Date(Date.now() + 7 * 86400000) : false;
   const TYPE_LABEL: Record<string, string> = { full_time: t('type_full'), part_time: t('type_part'), freelance: t('type_free'), volunteer: t('type_vol') };
   return (
-    <div className="bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all p-6 md:p-8 flex flex-col">
+    <Link href={`/lowongan/${job.id}`} className="bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all p-6 md:p-8 flex flex-col group cursor-pointer block">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
-          <h3 className="font-bold text-primary-950 text-lg mb-1">{job.title}</h3>
+          <h3 className="font-bold text-primary-950 text-lg mb-1 group-hover:text-primary-700 transition-colors">{job.title}</h3>
           <p className="text-[11px] text-primary-600 font-bold uppercase tracking-widest">{job.company}</p>
         </div>
         <div className="flex gap-2">
@@ -47,29 +45,10 @@ function JobCard({ job, t, locale }: { job: Job; t: any; locale: string }) {
         {job.salary_range && <span className="text-primary-600">{job.salary_range}</span>}
       </div>
 
-      {job.requirements && job.requirements.length > 0 && (
-        <div className="mb-6 pt-6 border-t border-gray-100">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-3">{t('requirements')}</p>
-          <ul className="space-y-2">
-            {job.requirements.slice(0, 3).map((req, i) => (
-              <li key={i} className="flex items-start gap-2 text-[11px] text-gray-600 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0 mt-1.5" />{req}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {job.phone_number && (
-        <div className="mt-auto">
-          <a href={`https://wa.me/${job.phone_number}?text=${encodeURIComponent(`Halo, saya tertarik melamar posisi ${job.title} dari DesaMind.`)}`}
-            target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 bg-primary-800 hover:bg-primary-950 text-white text-[10px] font-bold uppercase tracking-widest px-6 py-3 transition-colors">
-            {t('apply')}
-          </a>
-        </div>
-      )}
-    </div>
+      <div className="mt-auto border-t border-gray-100 pt-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary-600">
+        Lihat Selengkapnya <ArrowRight className="w-3.5 h-3.5" />
+      </div>
+    </Link>
   );
 }
 
@@ -78,20 +57,10 @@ export default function LowonganPage() {
   const locale = useLocale();
   const CATEGORIES = [t('cat_all'), t('cat_industry'), t('cat_gov'), t('cat_digital'), t('cat_agri'), t('cat_edu')];
   
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs] = useState<Job[]>(dummyJobs as any[]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(t('cat_all'));
 
-  useEffect(() => {
-    async function load() {
-      if (!supabase) { setLoading(false); return; }
-      const { data } = await supabase.from('jobs').select('*').eq('is_active', true).order('created_at', { ascending: false });
-      setJobs(data ?? []);
-      setLoading(false);
-    }
-    load();
-  }, []);
 
   const filtered = jobs.filter(j => {
     const matchSearch = j.title.toLowerCase().includes(search.toLowerCase()) || j.company.toLowerCase().includes(search.toLowerCase());
@@ -137,29 +106,26 @@ export default function LowonganPage() {
         </div>
       </div>
 
-      {loading ? (
-        <CardGridSkeleton count={4} cols={2} />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {filtered.map(job => <JobCard key={job.id} job={job} t={t} locale={locale} />)}
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {filtered.map(job => <JobCard key={job.id} job={job as any} t={t} locale={locale} />)}
+        </div>
+        {filtered.length === 0 && (
+          <div className="text-center py-24">
+            <Briefcase className="w-10 h-10 text-gray-300 mx-auto mb-4" />
+            <p className="font-bold text-gray-500">{jobs.length === 0 ? t('empty_none') : t('empty_not_found')}</p>
           </div>
-          {filtered.length === 0 && (
-            <div className="text-center py-24">
-              <Briefcase className="w-10 h-10 text-gray-300 mx-auto mb-4" />
-              <p className="font-bold text-gray-500">{jobs.length === 0 ? t('empty_none') : t('empty_not_found')}</p>
-            </div>
-          )}
-          
-          <div className="mt-20 border-t border-gray-200 pt-16 flex flex-col items-center text-center">
-            <h3 className="font-bold text-2xl text-primary-950 tracking-tight mb-4">{t('cta_title')}</h3>
-            <p className="text-gray-500 text-xs max-w-md leading-relaxed mb-8">{t('cta_desc')}</p>
-            <a href="/auth/login" className="bg-primary-800 hover:bg-primary-950 text-white text-[10px] font-bold uppercase tracking-widest px-8 py-3 transition-colors inline-block">
-              {t('cta_btn')}
-            </a>
-          </div>
-        </>
-      )}
+        )}
+        
+        <div className="mt-20 border-t border-gray-200 pt-16 flex flex-col items-center text-center">
+          <h3 className="font-bold text-2xl text-primary-950 tracking-tight mb-4">{t('cta_title')}</h3>
+          <p className="text-gray-500 text-xs max-w-md leading-relaxed mb-8">{t('cta_desc')}</p>
+          <a href="/auth/login" className="bg-primary-800 hover:bg-primary-950 text-white text-[10px] font-bold uppercase tracking-widest px-8 py-3 transition-colors inline-block">
+            {t('cta_btn')}
+          </a>
+        </div>
+      </>
+
     </div>
   );
 }

@@ -1,12 +1,10 @@
 'use client';
-/**
- * app/transparansi/page.tsx — Live Supabase Data
- */
-import { useState, useEffect } from 'react';
-import { Landmark, Search, Building2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
-import { CardGridSkeleton } from '@/components/ui/Skeletons';
-import { supabase } from '@/lib/supabase';
+import { useState } from 'react';
+import { Landmark, Search, Building2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { dummyProjects } from '@/lib/dummy-data';
+
 
 type Project = {
   id: string; title: string; category: string; status: string;
@@ -35,16 +33,16 @@ function ProjectCard({ project, t }: { project: Project; t: any }) {
   const status = STATUS_CONFIG[project.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.planning;
 
   return (
-    <div className="bg-white border border-gray-200 hover:shadow-lg transition-all p-6 md:p-8">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
+    <Link href={`/transparansi/${project.id}`} className="bg-white border border-gray-200 hover:shadow-lg transition-all p-6 md:p-8 block group cursor-pointer">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8 mt-2">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-primary-600 mb-2">{project.category}</p>
-          <h3 className="font-bold text-primary-950 text-xl">{project.title}</h3>
+          <h3 className="font-bold text-primary-950 text-xl group-hover:text-primary-700 transition-colors">{project.title}</h3>
         </div>
         <span className={`text-[9px] font-bold px-3 py-1 uppercase tracking-widest border shrink-0 ${status.color}`}>{status.label}</span>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-gray-100">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-8 border-b border-gray-100 flex-1">
         <div>
           <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest mb-3">
             <span className="text-gray-400">{t('progress')}</span>
@@ -66,39 +64,19 @@ function ProjectCard({ project, t }: { project: Project; t: any }) {
           </div>
         </div>
       </div>
-
-      <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary-600 hover:text-primary-800 transition">
-        {expanded ? <><ChevronUp className="w-3.5 h-3.5" /> {t('hide_detail')}</> : <><ChevronDown className="w-3.5 h-3.5" /> {t('show_detail')}</>}
-      </button>
-
-      {expanded && (
-        <div className="mt-6 pt-6 border-t border-gray-100 text-[11px] leading-relaxed text-gray-500 space-y-3 font-medium">
-          {project.description && <p className="mb-4">{project.description}</p>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {project.contractor && <div><span className="block text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">{t('contractor')}</span><strong className="text-primary-950 font-bold">{project.contractor}</strong></div>}
-            {project.start_date && project.end_date && <div><span className="block text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">{t('period')}</span><strong className="text-primary-950 font-bold">{project.start_date} – {project.end_date}</strong></div>}
-          </div>
-        </div>
-      )}
-    </div>
+      
+      <div className="mt-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary-600 hover:text-primary-800 transition">
+        Lihat Selengkapnya <ChevronUp className="w-3.5 h-3.5 rotate-90" />
+      </div>
+    </Link>
   );
 }
 
 export default function TransparansiPage() {
   const t = useTranslations('transparansi');
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [projects] = useState<Project[]>(dummyProjects as any[]);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    async function load() {
-      if (!supabase) { setLoading(false); return; }
-      const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-      setProjects(data ?? []);
-      setLoading(false);
-    }
-    load();
-  }, []);
 
   const filtered = projects.filter(p =>
     p.title.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase())
@@ -136,19 +114,16 @@ export default function TransparansiPage() {
         </div>
       </div>
 
-      {loading ? (
-        <CardGridSkeleton count={6} cols={3} />
-      ) : (
-        <div className="space-y-4">
-          {filtered.map(proj => <ProjectCard key={proj.id} project={proj} t={t} />)}
-          {filtered.length === 0 && (
-            <div className="text-center py-16">
-              <div className="w-14 h-14 bg-gray-100 flex items-center justify-center mx-auto mb-3"><Building2 className="w-7 h-7 text-gray-400" /></div>
-              <p className="font-semibold text-gray-700">{projects.length === 0 ? t('empty_no_projects') : t('empty_not_found')}</p>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="space-y-4">
+        {filtered.map(proj => <ProjectCard key={proj.id} project={proj as any} t={t} />)}
+        {filtered.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-14 h-14 bg-gray-100 flex items-center justify-center mx-auto mb-3"><Building2 className="w-7 h-7 text-gray-400" /></div>
+            <p className="font-semibold text-gray-700">{projects.length === 0 ? t('empty_no_projects') : t('empty_not_found')}</p>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }

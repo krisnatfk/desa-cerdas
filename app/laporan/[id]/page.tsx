@@ -12,8 +12,7 @@ import {
   Share2, Loader2, Send, X, Copy, Check,
 } from 'lucide-react';
 import { DetailSkeleton } from '@/components/ui/Skeletons';
-import { supabase } from '@/lib/supabase';
-import { dummyReportHistory } from '@/lib/dummy-data';
+import { dummyReportHistory, dummyReports } from '@/lib/dummy-data';
 import { StatusBadge, CategoryBadge } from '@/components/ui/Badge';
 import { AISolutionCard } from '@/components/ui/AISolutionCard';
 import { ReportTimeline } from '@/components/ui/ReportTimeline';
@@ -51,8 +50,7 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
   // Load report
   useEffect(() => {
     async function load() {
-      if (!supabase) return setLoading(false);
-      const { data } = await supabase.from('reports').select('*').eq('id', id).single();
+      const data = dummyReports.find(r => r.id === id);
       if (data) setReport(data);
       setLoading(false);
     }
@@ -61,31 +59,15 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
 
   // Load likes
   useEffect(() => {
-    async function loadLikes() {
-      try {
-        const res = await fetch(`/api/reports/${id}/likes`);
-        if (res.ok) {
-          const data = await res.json();
-          setLikeCount(data.count);
-          setLiked(data.liked);
-        }
-      } catch {}
-    }
-    loadLikes();
+    setLikeCount(12);
+    setLiked(false);
   }, [id]);
 
   // Load comments
   useEffect(() => {
-    async function loadComments() {
-      try {
-        const res = await fetch(`/api/reports/${id}/comments`);
-        if (res.ok) {
-          const data = await res.json();
-          setComments(data);
-        }
-      } catch {}
-    }
-    loadComments();
+    setComments([
+       { id: '1', report_id: id, user_id: 'u1', author_name: 'Budi Santoso', content: 'Semoga cepat ditangani oleh pihak berwenang.', created_at: new Date(Date.now() - 3600000).toISOString() }
+    ]);
   }, [id]);
 
   // Close share dropdown on outside click
@@ -102,43 +84,22 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
   // Toggle like
   async function handleLike() {
     setLiking(true);
-    try {
-      const res = await fetch(`/api/reports/${id}/likes`, { method: 'POST' });
-      if (res.ok) {
-        const data = await res.json();
-        setLikeCount(data.count);
-        setLiked(data.liked);
-      } else if (res.status === 401) {
-        alert('Anda harus login terlebih dahulu untuk mendukung laporan ini.');
-      }
-    } catch {} finally {
+    setTimeout(() => {
+      setLiked(!liked);
+      setLikeCount(prev => liked ? prev - 1 : prev + 1);
       setLiking(false);
-    }
+    }, 500);
   }
 
   // Post comment
   async function handlePostComment() {
     if (!commentText.trim()) return;
     setSendingComment(true);
-    try {
-      const res = await fetch(`/api/reports/${id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: commentText }),
-      });
-      if (res.ok) {
-        const newComment = await res.json();
-        setComments((prev) => [...prev, newComment]);
-        setCommentText('');
-      } else {
-        const err = await res.json().catch(() => ({}));
-        alert(err.error || 'Gagal mengirim komentar');
-      }
-    } catch {
-      alert('Gagal mengirim komentar');
-    } finally {
+    setTimeout(() => {
+      setComments((prev) => [...prev, { id: Math.random().toString(), report_id: id, user_id: 'me', author_name: 'Warga', content: commentText, created_at: new Date().toISOString() }]);
+      setCommentText('');
       setSendingComment(false);
-    }
+    }, 500);
   }
 
   // Share helpers

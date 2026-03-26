@@ -2,14 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '@/components/marketplace/CartContext';
 import { formatRupiah } from '@/lib/utils';
-import { Loader2, ArrowLeft, MapPin, Truck, ShieldCheck, CreditCard, ShoppingBag } from 'lucide-react';
+import { Loader2, ArrowLeft, MapPin, Truck, ShieldCheck, CreditCard, ShoppingBag, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useUser } from '@clerk/nextjs';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function CheckoutPage() {
   const { items, total, clear } = useCart();
-  const { user } = useUser();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingCost, setShippingCost] = useState(0);
@@ -18,34 +18,21 @@ export default function CheckoutPage() {
   const [districts, setDistricts] = useState<any[]>([]);
   const [selectedProv, setSelectedProv] = useState('');
   const [selectedCityId, setSelectedCityId] = useState('');
-  const [storeCity, setStoreCity] = useState('Bandar Lampung');
+  const [orderSuccess, setOrderSuccess] = useState(false);
   const [form, setForm] = useState({
-     name: user?.firstName || '',
+     name: user?.name || '',
      phone: '',
      address: '',
      city: '',
      district: '',
      courier: 'jne',
-     paymentMethod: 'midtrans'
+     paymentMethod: 'cod'
   });
+
 
   const grandTotal = total + shippingCost;
 
-  useEffect(() => {
-    // Load Midtrans Snap script
-    const script = document.createElement('script');
-    const isSandbox = process.env.NEXT_PUBLIC_MIDTRANS_IS_SANDBOX !== 'false';
-    const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || 'SB-Mid-client-wa5IAHNPOZmPX0dc';
-    script.src = isSandbox ? 'https://app.sandbox.midtrans.com/snap/snap.js' : 'https://app.midtrans.com/snap/snap.js';
-    script.setAttribute('data-client-key', clientKey);
-    document.body.appendChild(script);
 
-    return () => { 
-        if (document.body.contains(script)) {
-            document.body.removeChild(script); 
-        }
-    };
-  }, []);
 
   useEffect(() => {
     fetch('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json')
@@ -79,34 +66,15 @@ export default function CheckoutPage() {
     }
   }, [selectedCityId]);
   
-  useEffect(() => {
-     if(items.length > 0 && items[0].product.store_id) {
-        fetch(`/api/stores?id=${items[0].product.store_id}`)
-          .then(res => res.json())
-          .then(data => {
-            if(data && data.length > 0 && data[0].city) setStoreCity(data[0].city);
-          }).catch(e => console.error(e));
-     }
-  }, [items]);
+  // Store city logic removed for static mode
 
   async function checkShipping() {
      if (!form.city) return alert("Pilih kota tujuan terlebih dahulu");
      setShippingLoading(true);
      try {
-       const destinationName = form.district ? form.district : form.city;
-       const res = await fetch('/api/shipping', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ origin: storeCity, destination: destinationName, weight: 1000, courier: form.courier })
-       });
-       const data = await res.json();
-       if (data && data.length > 0) {
-          setShippingCost(data[0].cost[0].value);
-       } else {
-          setShippingCost(15000);
-       }
+       await new Promise(r => setTimeout(r, 600)); // Simulasi API RajaOngkir
+       setShippingCost(15000 + Math.floor(Math.random() * 10000) - (Math.floor(Math.random() * 10000) % 1000) ); // randomized 15k - 25k
      } catch (e) {
-       console.error("Shipping error", e);
        setShippingCost(15000);
      } finally {
        setShippingLoading(false);
@@ -119,65 +87,22 @@ export default function CheckoutPage() {
 
      setLoading(true);
      try {
-       const payload = {
-          buyer_id: user?.id || 'guest',
-          store_id: items[0]?.product.store_id || null, 
-          total_amount: grandTotal,
-          items: items.map(i => ({ id: i.product.id, name: i.product.name, price: i.product.price, quantity: i.quantity })),
-          payment_method: form.paymentMethod,
-          customer_details: {
-             first_name: form.name,
-             email: user?.emailAddresses?.[0]?.emailAddress || 'guest@example.com',
-             phone: form.phone,
-             address: form.district ? `${form.address}, Kec. ${form.district}` : form.address,
-             city: form.city,
-             shipping_cost: shippingCost
-          }
-       };
-
-       const res = await fetch('/api/checkout', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-       });
-       const data = await res.json();
-
-       if (data.error) throw new Error(data.error);
+       await new Promise(r => setTimeout(r, 800)); // Simulasi koneksi backend
+       const dummyOrderId = 'ORD-' + Math.floor(Math.random() * 900000 + 100000);
 
        if (form.paymentMethod === 'cod') {
           clear();
-          window.location.href = `/umkm/pesanan?id=${data.order_id}&status=success`;
+          window.location.href = `/umkm/pesanan?id=${dummyOrderId}&status=success`;
           return;
        }
-
-       (window as any).snap.pay(data.token, {
-          onSuccess: async function (result: any) {
-             // Update order status to 'terbayar' in DB
-             // (Midtrans webhook can't reach localhost, so we update from client)
-             try {
-               await fetch('/api/orders', {
-                 method: 'PATCH',
-                 headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify({ order_id: data.order_id, status: 'terbayar' })
-               });
-             } catch (e) {
-               console.error('Failed to update order status:', e);
-             }
-             clear();
-             window.location.href = `/umkm/pesanan?id=${data.order_id}&status=success`;
-          },
-          onPending: function (result: any) {
-             clear();
-             window.location.href = `/umkm/pesanan?id=${data.order_id}&status=pending`;
-          },
-          onError: function (result: any) {
-             alert('Pembayaran gagal: ' + result.status_message);
-          },
-          onClose: function () {
-             alert('Anda menutup popup pembayaran sebelum menyelesaikan transaksi.');
-             setLoading(false);
-          }
-       });
-
+       
+       // Simulasi Midtrans since we don't have a backend generate token
+       if (form.paymentMethod === 'midtrans') {
+          alert('SIMULASI: Membuka popup pembayaran Midtrans (Static Mode). Mengarahkan ke halaman sukses...');
+          clear();
+          window.location.href = `/umkm/pesanan?id=${dummyOrderId}&status=success`;
+          return;
+       }
      } catch (e: any) {
        alert("Terjadi kesalahan saat checkout: " + e.message);
        setLoading(false);

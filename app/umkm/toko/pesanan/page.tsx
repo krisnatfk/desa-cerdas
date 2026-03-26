@@ -2,7 +2,6 @@
 import { ShoppingBag, Package, CheckCircle2, Clock, Truck, Send, Loader2, XCircle, Search, AlertCircle, Camera } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
 import { formatRupiah } from '@/lib/utils';
 import Image from 'next/image';
 
@@ -25,11 +24,24 @@ const nextStatusLabel: Record<string, string> = {
   diproses: 'Tandai Dikirim',
 };
 
+// Dummy Orders for Static View
+const dummyOrders = [
+  {
+     id: 'ORD-1001', status: 'terbayar', total_amount: 50000, 
+     buyer_name: 'Budi Santoso', buyer_phone: '081234567890', shipping_address: 'Jl. Merdeka No. 10', payment_method: 'midtrans',
+     created_at: new Date().toISOString(),
+     order_items: [{ products: { name: 'Keripik Singkong', image_url: 'https://picsum.photos/seed/k1/100/100' }, quantity: 2, price: 25000 }]
+  },
+  {
+     id: 'ORD-1002', status: 'diproses', total_amount: 150000, 
+     buyer_name: 'Siti Aminah', buyer_phone: '081298765432', shipping_address: 'Jl. Pahlawan No. 5', payment_method: 'cod',
+     created_at: new Date(Date.now() - 86400000).toISOString(),
+     order_items: [{ products: { name: 'Batik Tulis', image_url: 'https://picsum.photos/seed/b1/100/100' }, quantity: 1, price: 150000 }]
+  }
+];
+
 export default function SellerOrdersPage() {
-  const { user, isLoaded } = useUser();
-  const [storeId, setStoreId] = useState<string | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   
@@ -41,85 +53,30 @@ export default function SellerOrdersPage() {
   const [cancelModal, setCancelModal] = useState<{open: boolean, orderId: string, reason: string}>({open: false, orderId: '', reason: ''});
   const [photoModal, setPhotoModal] = useState<{open: boolean, photoUrl: string}>({open: false, photoUrl: ''});
 
-  async function loadOrders() {
-    if (!isLoaded || !user) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const storeRes = await fetch('/api/stores');
-      const stores = await storeRes.json();
-      const myStore = Array.isArray(stores) ? stores.find((s: any) => s.user_id === user.id) : null;
-      if (myStore) {
-        setStoreId(myStore.id);
-        const ordersRes = await fetch(`/api/orders?store_id=${myStore.id}`);
-        const data = await ordersRes.json();
-        if (Array.isArray(data)) setOrders(data);
-      }
-    } catch (e) {
-      console.error('Failed to load orders:', e);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    loadOrders();
-  }, [user, isLoaded]);
+    setOrders(dummyOrders);
+  }, []);
 
   async function updateOrderStatus(orderId: string, newStatus: string, additionalPayload: any = {}) {
     setUpdating(orderId);
-    try {
-      const payload: any = { order_id: orderId, status: newStatus, ...additionalPayload };
-      if (newStatus === 'dikirim' && awbInputs[orderId]) {
-        payload.awb_number = awbInputs[orderId];
-      }
-      
-      const res = await fetch('/api/orders', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const updated = await res.json();
-      if (!updated.error) {
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated } : o));
-      } else {
-        alert('Gagal update: ' + updated.error);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setUpdating(null);
+    await new Promise(r => setTimeout(r, 800)); // Simulating API call
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, ...additionalPayload } : o));
+    if (newStatus === 'dikirim' && awbInputs[orderId]) {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, awb_number: awbInputs[orderId] } : o));
     }
+    setUpdating(null);
   }
 
   async function handleSellerCancel() {
     if (!cancelModal.reason) return alert('Silakan isi alasan pembatalan');
     setUpdating(cancelModal.orderId);
-    try {
-      const payload = {
-        order_id: cancelModal.orderId,
-        status: 'dibatalkan',
-        cancellation_reason: cancelModal.reason,
-        cancellation_requested_by: 'seller',
-        cancellation_status: 'approved'
-      };
-      
-      const res = await fetch('/api/orders', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const updated = await res.json();
-      if (!updated.error) {
-        setOrders(prev => prev.map(o => o.id === cancelModal.orderId ? { ...o, ...updated } : o));
-        setCancelModal({open: false, orderId: '', reason: ''});
-      } else {
-        alert('Gagal membatalkan pesanan: ' + updated.error);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setUpdating(null);
-    }
+    await new Promise(r => setTimeout(r, 800));
+    setOrders(prev => prev.map(o => o.id === cancelModal.orderId ? { 
+      ...o, status: 'dibatalkan', cancellation_reason: cancelModal.reason, 
+      cancellation_requested_by: 'seller', cancellation_status: 'approved' 
+    } : o));
+    setCancelModal({open: false, orderId: '', reason: ''});
+    setUpdating(null);
   }
 
   const filtered = orders.filter(o => {
@@ -201,11 +158,7 @@ export default function SellerOrdersPage() {
       </div>
 
       {/* Orders List */}
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-        </div>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="bg-white border border-gray-200 border-t-4 border-t-primary-600 p-12 text-center shadow-sm">
           <ShoppingBag className="w-12 h-12 text-primary-200 mx-auto mb-4" />
           <p className="text-gray-600 font-bold mb-1">

@@ -27,17 +27,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ category: 'Lainnya' });
   }
 
-  // Try OpenAI API if key is configured
+  // Try OpenAI API API if key is configured (supports Gemini OpenAI compatibility)
   if (process.env.OPENAI_API_KEY) {
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1/';
+      const url = baseUrl.endsWith('/') ? `${baseUrl}chat/completions` : `${baseUrl}/chat/completions`;
+      const modelName = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
+          model: modelName,
           max_tokens: 20,
           messages: [
             {

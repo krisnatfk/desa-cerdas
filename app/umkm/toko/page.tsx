@@ -3,56 +3,27 @@ import { Package, DollarSign, ShoppingBag, Clock, CheckCircle, TrendingUp } from
 import { formatRupiah } from '@/lib/utils';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { StatCard } from '@/components/ui/StatCard';
-import { StatCardSkeleton } from '@/components/ui/Skeletons';
+import { dummyProducts } from '@/lib/dummy-data';
 
 export default function SellerDashboardHome() {
-  const { user } = useUser();
   const [stats, setStats] = useState({
      products: 0, earnings: 0, orders: 0, reviews: 0,
      pendingOrders: 0
   });
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-     async function loadStats() {
-        if (!user) {
-          setLoading(false);
-          return;
-        }
-        try {
-          const storeRes = await fetch('/api/stores');
-          const stores = await storeRes.json();
-          const myStore = Array.isArray(stores) ? stores.find((s: any) => s.user_id === user.id) : null;
-          if (myStore) {
-             const [prodRes, ordersRes] = await Promise.all([
-               fetch(`/api/products?store_id=${myStore.id}`),
-               fetch(`/api/orders?store_id=${myStore.id}`)
-             ]);
-             const prods = await prodRes.json();
-             const ordersData = await ordersRes.json();
-             const allOrders = Array.isArray(ordersData) ? ordersData : [];
-             
-             const completedOrders = allOrders.filter((o: any) => o.status === 'selesai');
-             const pendingOrders = allOrders.filter((o: any) => ['pending', 'terbayar', 'diproses'].includes(o.status));
-             const totalEarnings = completedOrders.reduce((s: number, o: any) => s + Number(o.total_amount || 0), 0);
-
-             setStats({
-               products: Array.isArray(prods) ? prods.length : 0,
-               earnings: totalEarnings,
-               orders: completedOrders.length,
-               pendingOrders: pendingOrders.length,
-               reviews: 0
-             });
-          }
-        } catch { } finally {
-          setLoading(false);
-        }
-     }
-     loadStats();
-  }, [user]);
+     // User is locally simulated.
+     // In a real static build, we just load dummy metrics.
+     setStats({
+       products: dummyProducts.length,
+       earnings: 12500000, // Dummy
+       orders: 45,         // Dummy
+       pendingOrders: 3,   // Dummy
+       reviews: 12
+     });
+  }, []);
 
   const mockData = [
      { name: 'Jan', orders: 12 }, { name: 'Feb', orders: 19 },
@@ -62,7 +33,6 @@ export default function SellerDashboardHome() {
 
   return (
     <div className="space-y-6">
-      {/* Page title */}
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold text-primary-900 border-l-4 border-primary-600 pl-4">Dashboard Toko</h1>
         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 pl-5">
@@ -70,21 +40,13 @@ export default function SellerDashboardHome() {
         </p>
       </div>
 
-      {/* Stats row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {loading ? (
-          <>{Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}</>
-        ) : (
-          <>
-            <StatCard icon={Package} label="TOTAL PRODUK" value={stats.products} trend="12%" trendUp />
-            <StatCard icon={Clock} label="MENUNGGU" value={stats.pendingOrders} trend="5%" trendUp={false} />
-            <StatCard icon={CheckCircle} label="PESANAN SELESAI" value={stats.orders} trend="18%" trendUp />
-            <StatCard icon={DollarSign} label="TOTAL PENDAPATAN" value={formatRupiah(stats.earnings)} trend="8%" trendUp accent />
-          </>
-        )}
+        <StatCard icon={Package} label="TOTAL PRODUK" value={stats.products} trend="12%" trendUp />
+        <StatCard icon={Clock} label="MENUNGGU" value={stats.pendingOrders} trend="5%" trendUp={false} />
+        <StatCard icon={CheckCircle} label="PESANAN SELESAI" value={stats.orders} trend="18%" trendUp />
+        <StatCard icon={DollarSign} label="TOTAL PENDAPATAN" value={formatRupiah(stats.earnings)} trend="8%" trendUp accent />
       </div>
 
-      {/* Chart Section */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
          <div className="bg-white border border-gray-200 overflow-hidden xl:col-span-2">
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
@@ -109,7 +71,6 @@ export default function SellerDashboardHome() {
             </div>
          </div>
 
-         {/* AI Insights placeholder for Toko matching Admin Theme */}
          <div className="bg-white border border-gray-200 xl:col-span-1 flex flex-col">
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
                <div className="flex items-center gap-2">
@@ -133,7 +94,6 @@ export default function SellerDashboardHome() {
          </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="flex flex-wrap gap-4 pt-2">
          <Link href="/umkm/toko/produk/tambah" className="bg-primary-900 text-white px-6 py-3 rounded-lg text-xs tracking-wider uppercase font-bold hover:bg-primary-950 transition flex items-center gap-2">
            <Package className="w-4 h-4" />

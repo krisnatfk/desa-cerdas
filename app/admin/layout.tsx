@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { UserButton, useUser } from '@clerk/nextjs';
+import { useAuth } from '@/hooks/useAuth';
 import {
   LayoutDashboard,
   FileText,
@@ -26,18 +26,30 @@ import {
   Menu,
   X,
   ChevronDown,
+  Megaphone,
+  Camera,
+  PieChart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations('admin_layout');
+  const tAdmin = useTranslations('admin_pages');
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMapSection = pathname.startsWith('/peta') || pathname.startsWith('/admin/pengaturan-peta');
   const isUmkmSection = pathname.startsWith('/admin/umkm');
   const [mapOpen, setMapOpen] = useState(isMapSection);
   const [umkmOpen, setUmkmOpen] = useState(isUmkmSection);
+
+  const [groupsOpen, setGroupsOpen] = useState<Record<string, boolean>>({
+    'utama': true,
+    'info': true,
+    'eco': true,
+    'sosial': true,
+  });
+  const toggleGroup = (id: string) => setGroupsOpen(prev => ({ ...prev, [id]: !prev[id] }));
 
   useEffect(() => {
     setMobileOpen(false);
@@ -49,24 +61,65 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (isUmkmSection) setUmkmOpen(true);
   }, [isMapSection, isUmkmSection]);
 
-  const navItems = [
-    { href: '/admin', label: t('nav_dashboard'), icon: LayoutDashboard, exact: true },
-    { href: '/admin/laporan', label: t('nav_laporan'), icon: FileText },
-    { href: '/admin/transparansi', label: t('nav_transparansi'), icon: Landmark },
-    { href: '/admin/lowongan', label: t('nav_lowongan'), icon: Briefcase },
-    { href: '/admin/edukasi', label: t('nav_edukasi'), icon: GraduationCap },
-    { href: '/admin/gotong-royong', label: t('nav_gotong_royong'), icon: Users },
-    { href: '/admin/komunitas', label: t('nav_komunitas'), icon: BookOpen },
-  ];
-
-  const umkmSubItems = [
-    { href: '/admin/umkm', label: 'Produk UMKM', icon: Store },
-    { href: '/admin/umkm/toko', label: 'Manajemen Toko', icon: Settings },
-  ];
-
-  const mapSubItems = [
-    { href: '/peta', label: t('nav_peta'), icon: MapPin },
-    { href: '/admin/pengaturan-peta', label: 'Pengaturan Peta', icon: Settings },
+  const menuGroups = [
+    {
+      id: 'utama',
+      title: tAdmin('group_utama'),
+      items: [
+        { href: '/admin', label: t('nav_dashboard'), icon: LayoutDashboard, exact: true },
+        { href: '/admin/laporan', label: t('nav_laporan'), icon: FileText },
+        { href: '/admin/transparansi', label: t('nav_transparansi'), icon: Landmark },
+      ],
+    },
+    {
+      id: 'info',
+      title: tAdmin('group_info'),
+      items: [
+        { href: '/admin/pengumuman', label: tAdmin('pengumuman_title'), icon: Megaphone },
+        { href: '/admin/galeri', label: tAdmin('galeri_title'), icon: Camera },
+        { href: '/admin/apbdesa', label: tAdmin('apbdesa_title'), icon: PieChart },
+      ],
+    },
+    {
+      id: 'eco',
+      title: tAdmin('group_eco'),
+      items: [
+        { href: '/admin/lowongan', label: t('nav_lowongan'), icon: Briefcase },
+        { href: '/admin/edukasi', label: t('nav_edukasi'), icon: GraduationCap },
+      ],
+      collapsible: {
+        id: 'umkm',
+        label: t('nav_umkm') || 'UMKM & Toko',
+        icon: Store,
+        isActive: isUmkmSection,
+        isOpen: umkmOpen,
+        toggle: () => setUmkmOpen(o => !o),
+        subItems: [
+          { href: '/admin/umkm', label: 'Produk UMKM', icon: Store },
+          { href: '/admin/umkm/toko', label: 'Manajemen Toko', icon: Settings },
+        ]
+      }
+    },
+    {
+      id: 'sosial',
+      title: tAdmin('group_sosial'),
+      items: [
+        { href: '/admin/gotong-royong', label: t('nav_gotong_royong'), icon: Users },
+        { href: '/admin/komunitas', label: t('nav_komunitas'), icon: BookOpen },
+      ],
+      collapsible: {
+        id: 'map',
+        label: t('nav_peta') || 'Pemetaan Desa',
+        icon: MapPin,
+        isActive: isMapSection,
+        isOpen: mapOpen,
+        toggle: () => setMapOpen(o => !o),
+        subItems: [
+          { href: '/peta', label: t('nav_peta'), icon: MapPin },
+          { href: '/admin/pengaturan-peta', label: 'Pengaturan Peta', icon: Settings },
+        ]
+      }
+    }
   ];
 
   const SidebarContent = (
@@ -83,102 +136,82 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+      <nav className="flex-1 px-4 py-6 space-y-4 overflow-y-auto w-full overflow-x-hidden">
+        {menuGroups.map((group, idx) => {
+          const isOpen = groupsOpen[group.id];
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-4 px-4 py-3.5 text-[10px] font-bold uppercase tracking-widest transition-all',
-                active
-                  ? 'text-primary-950 bg-gray-50 border border-gray-200'
-                  : 'text-gray-500 hover:text-primary-800 hover:bg-gray-50 border border-transparent'
-              )}
-            >
-              <item.icon className={cn('w-4 h-4 shrink-0', active ? 'text-primary-800' : 'text-gray-400')} />
-              <span>{item.label}</span>
-            </Link>
+            <div key={idx} className="space-y-1">
+              <button 
+                onClick={() => toggleGroup(group.id)}
+                className="w-full flex items-center justify-between px-4 py-2 hover:bg-gray-100/50 rounded-lg group/btn transition-colors mb-1"
+              >
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover/btn:text-gray-600 transition-colors">{group.title}</span>
+                <ChevronDown className={cn('w-3 h-3 text-gray-400 transition-transform duration-200', isOpen ? 'rotate-180' : '')} />
+              </button>
+              
+              <div className={cn('space-y-1 overflow-hidden transition-all duration-300', isOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0')}>
+                {group.items.map((item) => {
+                  const active = (item as any).exact ? pathname === item.href : pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        'flex items-center gap-4 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-lg',
+                        active
+                          ? 'text-primary-950 bg-gray-50 border border-gray-200'
+                          : 'text-gray-500 hover:text-primary-800 hover:bg-gray-50 border border-transparent'
+                      )}
+                    >
+                      <item.icon className={cn('w-4 h-4 shrink-0', active ? 'text-primary-800' : 'text-gray-400')} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+                
+                {/* Collapsible if any */}
+                {group.collapsible && (
+                   <div className="pt-1">
+                     <button
+                       onClick={group.collapsible.toggle}
+                       className={cn(
+                         'w-full flex items-center gap-4 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-lg mb-1',
+                         group.collapsible.isActive
+                           ? 'text-primary-950 bg-gray-50 border border-gray-200'
+                           : 'text-gray-500 hover:text-primary-800 hover:bg-gray-50 border border-transparent'
+                       )}
+                     >
+                       <group.collapsible.icon className={cn('w-4 h-4 shrink-0', group.collapsible.isActive ? 'text-primary-800' : 'text-gray-400')} />
+                       <span className="flex-1 text-left">{group.collapsible.label}</span>
+                       <ChevronDown className={cn('w-3.5 h-3.5 transition-transform duration-200', group.collapsible.isOpen ? 'rotate-180' : '')} />
+                     </button>
+           
+                     <div className={cn('overflow-hidden transition-all duration-200 space-y-1', group.collapsible.isOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0')}>
+                       {group.collapsible.subItems.map((sub) => {
+                         const exactActive = sub.href === '/admin/umkm' ? pathname === '/admin/umkm' : (sub.href === '/peta' ? pathname === '/peta' : pathname.startsWith(sub.href));
+                         return (
+                           <Link
+                             key={sub.href}
+                             href={sub.href}
+                             className={cn(
+                               'flex items-center gap-4 pl-12 pr-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all rounded-lg',
+                               exactActive
+                                 ? 'text-primary-950 bg-primary-50/50 border-l-2 border-primary-600 rounded-l-none'
+                                 : 'text-gray-400 hover:text-primary-800 hover:bg-gray-50 border-l-2 border-transparent rounded-l-none'
+                             )}
+                           >
+                             <sub.icon className={cn('w-3.5 h-3.5 shrink-0', exactActive ? 'text-primary-800' : 'text-gray-400')} />
+                             <span>{sub.label}</span>
+                           </Link>
+                         );
+                       })}
+                     </div>
+                   </div>
+                )}
+              </div>
+            </div>
           );
         })}
-
-        {/* UMKM Group (Collapsible) */}
-        <div>
-          <button
-            onClick={() => setUmkmOpen(o => !o)}
-            className={cn(
-              'w-full flex items-center gap-4 px-4 py-3.5 text-[10px] font-bold uppercase tracking-widest transition-all',
-              isUmkmSection
-                ? 'text-primary-950 bg-gray-50 border border-gray-200'
-                : 'text-gray-500 hover:text-primary-800 hover:bg-gray-50 border border-transparent'
-            )}
-          >
-            <Store className={cn('w-4 h-4 shrink-0', isUmkmSection ? 'text-primary-800' : 'text-gray-400')} />
-            <span className="flex-1 text-left">{t('nav_umkm')}</span>
-            <ChevronDown className={cn('w-3.5 h-3.5 transition-transform duration-200', umkmOpen ? 'rotate-180' : '')} />
-          </button>
-
-          <div className={cn('overflow-hidden transition-all duration-200', umkmOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0')}>
-            {umkmSubItems.map((sub) => {
-              const subActive = pathname === sub.href || (sub.href !== '/admin/umkm' && pathname.startsWith(sub.href));
-              const exactActive = sub.href === '/admin/umkm' ? pathname === '/admin/umkm' : subActive;
-              return (
-                <Link
-                  key={sub.href}
-                  href={sub.href}
-                  className={cn(
-                    'flex items-center gap-4 pl-12 pr-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-all',
-                    exactActive
-                      ? 'text-primary-950 bg-primary-50/50 border-l-2 border-primary-600'
-                      : 'text-gray-400 hover:text-primary-800 hover:bg-gray-50 border-l-2 border-transparent'
-                  )}
-                >
-                  <sub.icon className={cn('w-3.5 h-3.5 shrink-0', exactActive ? 'text-primary-800' : 'text-gray-400')} />
-                  <span>{sub.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Peta Group (Collapsible) */}
-        <div>
-          <button
-            onClick={() => setMapOpen(o => !o)}
-            className={cn(
-              'w-full flex items-center gap-4 px-4 py-3.5 text-[10px] font-bold uppercase tracking-widest transition-all',
-              isMapSection
-                ? 'text-primary-950 bg-gray-50 border border-gray-200'
-                : 'text-gray-500 hover:text-primary-800 hover:bg-gray-50 border border-transparent'
-            )}
-          >
-            <Map className={cn('w-4 h-4 shrink-0', isMapSection ? 'text-primary-800' : 'text-gray-400')} />
-            <span className="flex-1 text-left">Peta</span>
-            <ChevronDown className={cn('w-3.5 h-3.5 transition-transform duration-200', mapOpen ? 'rotate-180' : '')} />
-          </button>
-
-          <div className={cn('overflow-hidden transition-all duration-200', mapOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0')}>
-            {mapSubItems.map((sub) => {
-              const subActive = pathname === sub.href || pathname.startsWith(sub.href + '/');
-              return (
-                <Link
-                  key={sub.href}
-                  href={sub.href}
-                  className={cn(
-                    'flex items-center gap-4 pl-12 pr-4 py-3 text-[10px] font-bold uppercase tracking-widest transition-all',
-                    subActive
-                      ? 'text-primary-950 bg-primary-50/50 border-l-2 border-primary-600'
-                      : 'text-gray-400 hover:text-primary-800 hover:bg-gray-50 border-l-2 border-transparent'
-                  )}
-                >
-                  <sub.icon className={cn('w-3.5 h-3.5 shrink-0', subActive ? 'text-primary-800' : 'text-gray-400')} />
-                  <span>{sub.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
       </nav>
 
       <div className="px-4 py-6 border-t border-gray-100 space-y-2 bg-gray-50/30 shrink-0">
@@ -240,7 +273,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <span className="text-sm font-bold text-gray-800">Admin DesaMind</span>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary-600">Super Admin</span>
              </div>
-             <UserButton appearance={{ elements: { avatarBox: "w-8 h-8" } }} />
+             <div className="w-8 h-8 rounded-full bg-primary-800 flex items-center justify-center text-white text-[11px] font-bold ring-2 ring-white shadow-sm">AD</div>
           </div>
         </header>
 

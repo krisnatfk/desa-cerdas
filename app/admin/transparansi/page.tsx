@@ -1,13 +1,10 @@
 'use client';
-/**
- * app/admin/transparansi/page.tsx
- * Admin: Manajemen Proyek Pembangunan (Transparansi)
- */
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Landmark, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil } from 'lucide-react';
 import { TableSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
+import { dummyProjects } from '@/lib/dummy-data';
+
 
 type Project = {
   id: string;
@@ -48,8 +45,8 @@ export default function AdminTransparansiPage() {
     paused: t('status_paused') 
   };
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<Project[]>(dummyProjects as any[]);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -57,37 +54,35 @@ export default function AdminTransparansiPage() {
   const [error, setError] = useState('');
 
   async function load() {
-    setLoading(true);
-    if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-    setProjects(data ?? []);
-    setLoading(false);
+    // no-op for static demo
   }
 
   useEffect(() => { load(); }, []);
 
   async function save() {
-    if (!supabase || !form.title) return;
+    if (!form.title) return;
     setSaving(true); setError('');
-    const payload = { ...form, budget: Number(form.budget), spent: Number(form.spent), progress: Number(form.progress) };
-    const { error: err } = editId
-      ? await supabase.from('projects').update(payload).eq('id', editId)
-      : await supabase.from('projects').insert(payload);
-    setSaving(false);
-    if (err) { setError(err.message); return; }
-    setShowForm(false); setEditId(null); setForm(EMPTY); load();
+    setTimeout(() => {
+      const payload = { ...form, budget: Number(form.budget), spent: Number(form.spent), progress: Number(form.progress) };
+      if (editId) {
+        setProjects(prev => prev.map(p => p.id === editId ? { ...p, ...payload } as any : p));
+      } else {
+        setProjects(prev => [{ id: Math.random().toString(), created_at: new Date().toISOString(), ...payload } as any, ...prev]);
+      }
+      setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
+    }, 500);
   }
 
   async function del(id: string) {
-    if (!supabase || !confirm(t('confirm_delete'))) return;
-    await supabase.from('projects').delete().eq('id', id);
-    load();
+    if (!confirm(t('confirm_delete'))) return;
+    setProjects(prev => prev.filter(p => p.id !== id));
   }
 
   function startEdit(p: Project) {
     setForm({ title: p.title, category: p.category, status: p.status, budget: p.budget, spent: p.spent, progress: p.progress, description: p.description ?? '', contractor: p.contractor ?? '', start_date: p.start_date ?? '', end_date: p.end_date ?? '' });
     setEditId(p.id); setShowForm(true);
   }
+
 
   return (
     <div>

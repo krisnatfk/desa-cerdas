@@ -58,7 +58,12 @@ export async function POST(request: Request) {
     return NextResponse.json(productData);
 
   } catch (error: any) {
-    console.error('AI Product Generation Error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to generate product data' }, { status: 500 });
+    console.error('AI Product Generation Error:', error.message);
+    // Graceful fallback for demo/static application
+    return NextResponse.json({
+      name: "Produk UMKM Desa",
+      description: "Deskripsi otomatis belum tersedia. Silakan lengkapi deskripsi produk ini secara manual sesuai dengan gambar yang diunggah.",
+      category: "Lainnya"
+    });
   }
 }

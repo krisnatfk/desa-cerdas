@@ -1,112 +1,44 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useUser, UserButton } from '@clerk/nextjs';
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
-  Store, Loader2, LayoutDashboard, Package, PlusSquare, ShoppingBag,
-  AlertCircle, Clock, ChevronLeft, LogOut, Menu, X
+  Store, LayoutDashboard, Package, PlusSquare, ShoppingBag,
+  LogOut, Menu, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoaded, isSignedIn } = useUser();
-  const [store, setStore] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isSignedIn } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn) {
-      setLoading(false);
-      return;
-    }
-    async function fetchStore() {
-      try {
-        const res = await fetch('/api/stores');
-        const stores = await res.json();
-        const myStore = Array.isArray(stores) ? stores.find((s: any) => s.user_id === user?.id) : null;
-        setStore(myStore);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchStore();
-  }, [isLoaded, isSignedIn, user?.id]);
+  // Demo store always active
+  const store = {
+    name: 'Toko Demo DesaMind',
+    status: 'active',
+  };
 
-  if (!isLoaded || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-      </div>
-    );
-  }
-
-  // Handle various states:
   if (!isSignedIn) {
     return (
       <div className="min-h-screen bg-gray-50 pt-28 pb-16 px-4">
-        <div className="max-w-md mx-auto text-center bg-white border border-gray-200 p-10 mt-10 shadow-sm rounded-2xl">
-          <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+        <div className="max-w-md mx-auto text-center bg-white border border-gray-200 p-10 mt-10 shadow-sm">
+          <Store className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-primary-900 mb-3">Login Diperlukan</h1>
           <p className="text-sm text-gray-500 mb-6">Silakan login untuk mengakses dashboard toko.</p>
-          <Link href="/auth/register" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary-950 transition-colors rounded-lg">
-            Login / Daftar
+          <Link href="/auth/login" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary-950 transition-colors">
+            Login
           </Link>
         </div>
       </div>
     );
   }
 
-  if (!store) {
-    return (
-      <div className="min-h-screen bg-gray-50 pt-28 pb-16 px-4">
-        <div className="max-w-md mx-auto text-center bg-white border border-gray-200 p-10 mt-10 shadow-sm rounded-2xl">
-          <Store className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-gray-700 mb-3">Belum Punya Toko</h1>
-          <p className="text-sm text-gray-500 mb-6">Daftarkan toko UMKM Anda terlebih dahulu.</p>
-          <Link href="/umkm/daftar" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary-950 transition-colors rounded-lg">
-            Daftar Toko
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
-  if (store.status === 'pending') {
-    return (
-      <div className="min-h-screen bg-gray-50 pt-28 pb-16 px-4">
-        <div className="max-w-md mx-auto text-center bg-white border border-gray-200 p-10 mt-10 shadow-sm rounded-2xl">
-          <Clock className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-primary-900 mb-3">Toko Menunggu Persetujuan</h1>
-          <p className="text-sm text-gray-500 mb-2">Toko <strong className="text-primary-800">{store.name}</strong> masih menunggu persetujuan admin.</p>
-          <Link href="/umkm" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary-950 transition-colors rounded-lg">
-            Kembali ke Marketplace
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (store.status === 'rejected') {
-    return (
-      <div className="min-h-screen bg-gray-50 pt-28 pb-16 px-4">
-        <div className="max-w-md mx-auto text-center bg-white border border-gray-200 p-10 mt-10 shadow-sm rounded-2xl">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-red-700 mb-3">Toko Ditolak</h1>
-          <p className="text-sm text-gray-500 mb-6">Pendaftaran toko Anda ditolak. Hubungi admin untuk informasi.</p>
-          <Link href="/umkm" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary-950 transition-colors rounded-lg">
-            Kembali ke Marketplace
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   // Active Store Dashboard Layout
   const navItems = [
@@ -196,10 +128,12 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
           
           <div className="flex items-center gap-4">
              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-sm font-bold text-gray-800">{user?.fullName}</span>
+                <span className="text-sm font-bold text-gray-800">{user?.name || 'Demo User'}</span>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary-600">Pemilik Toko</span>
              </div>
-             <UserButton appearance={{ elements: { avatarBox: "w-8 h-8" } }} />
+             <div className="w-8 h-8 rounded-full bg-primary-800 flex items-center justify-center text-white text-[11px] font-bold ring-2 ring-white shadow-sm">
+               {user?.avatar || 'DU'}
+             </div>
           </div>
         </header>
 

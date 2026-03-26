@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FileText, ChevronDown, Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { dummyReports } from '@/lib/dummy-data';
 import { StatusBadge, CategoryBadge } from '@/components/ui/Badge';
 import { formatRelativeTime } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -12,27 +12,15 @@ const STATUS_OPTIONS = ['pending', 'in_progress', 'completed'] as const;
 
 export default function AdminLaporanPage() {
   const t = useTranslations('admin_laporan');
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>(dummyReports);
   const [selected, setSelected] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function fetchReports() {
-      if (!supabase) {
-        setLoading(false);
-        return;
-      }
-      const { data } = await supabase.from('reports').select('*').order('created_at', { ascending: false });
-      if (data) setReports(data);
-      setLoading(false);
-    }
-    fetchReports();
+    // no-op for static demo
   }, []);
 
   async function updateStatus(id: string, status: typeof STATUS_OPTIONS[number]) {
-    if (supabase) {
-      await supabase.from('reports').update({ status }).eq('id', id);
-    }
     setReports((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
     setSelected(null);
   }

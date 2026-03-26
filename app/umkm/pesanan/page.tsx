@@ -1,10 +1,9 @@
 'use client';
-import { ShoppingBag, Package, CheckCircle2, Clock, Truck, ChevronRight, Loader2, XCircle, AlertCircle, Camera, Star } from 'lucide-react';
+import { ShoppingBag, Package, CheckCircle2, Clock, Truck, Loader2, XCircle, AlertCircle, Camera, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Suspense, useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
 import { formatRupiah } from '@/lib/utils';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
@@ -16,71 +15,49 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
   dibatalkan: { label: 'Dibatalkan', color: 'bg-red-50 text-red-800 border-red-200', icon: XCircle },
 };
 
+// Dummy Orders for Static View
+const dummyOrders = [
+  {
+     id: 'ORD-1001', status: 'terbayar', total_amount: 50000, 
+     buyer_name: 'Budi Santoso', buyer_phone: '081234567890', shipping_address: 'Jl. Merdeka No. 10', payment_method: 'midtrans',
+     created_at: new Date().toISOString(),
+     order_items: [{ products: { name: 'Keripik Singkong', image_url: 'https://picsum.photos/seed/k1/100/100' }, quantity: 2, price: 25000 }],
+     cancellation_status: null
+  },
+  {
+     id: 'ORD-1002', status: 'dikirim', total_amount: 150000, awb_number: 'RESI123456',
+     buyer_name: 'Siti Aminah', buyer_phone: '081298765432', shipping_address: 'Jl. Pahlawan No. 5', payment_method: 'cod',
+     created_at: new Date(Date.now() - 86400000).toISOString(),
+     order_items: [{ products: { name: 'Batik Tulis', image_url: 'https://picsum.photos/seed/b1/100/100' }, quantity: 1, price: 150000 }],
+     cancellation_status: null
+  }
+];
+
 function OrderList() {
   const searchParams = useSearchParams();
   const statusParam = searchParams.get('status');
   const orderIdParam = searchParams.get('id');
-  const { user, isLoaded } = useUser();
   const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
+  
   // Modals State
   const [cancelModal, setCancelModal] = useState<{open: boolean, orderId: string, reason: string}>({open: false, orderId: '', reason: ''});
   const [completeModal, setCompleteModal] = useState<{open: boolean, orderId: string, photoBase64: string}>({open: false, orderId: '', photoBase64: ''});
   const [reviewModal, setReviewModal] = useState<{open: boolean, orderId: string, productId: string, rating: number, comment: string}>({open: false, orderId: '', productId: '', rating: 5, comment: ''});
   const [actionLoading, setActionLoading] = useState(false);
 
-  async function fetchOrders() {
-    if (!isLoaded || !user) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const res = await fetch(`/api/orders?buyer_id=${user.id}`);
-      const data = await res.json();
-      if (Array.isArray(data)) setOrders(data);
-    } catch (e) {
-      console.error('Failed to fetch orders:', e);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    fetchOrders();
-  }, [user, isLoaded]);
+    setOrders(dummyOrders);
+  }, []);
 
-  // Handle Cancellation
   async function submitCancel() {
     if (!cancelModal.reason) return alert('Pilih atau tulis alasan pembatalan');
     setActionLoading(true);
-    try {
-      const order = orders.find(o => o.id === cancelModal.orderId);
-      const isPending = order?.status === 'pending';
-      
-      const payload = {
-        order_id: cancelModal.orderId,
-        cancellation_reason: cancelModal.reason,
-        cancellation_requested_by: 'buyer',
-        // If still pending, cancel immediately. Otherwise, request approval.
-        cancellation_status: isPending ? 'approved' : 'requested',
-        status: isPending ? 'dibatalkan' : undefined 
-      };
-
-      await fetch('/api/orders', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      setCancelModal({open: false, orderId: '', reason: ''});
-      fetchOrders();
-    } catch (e) {
-      alert('Gagal mengajukan pembatalan');
-    } finally {
-      setActionLoading(false);
-    }
+    await new Promise(r => setTimeout(r, 800));
+    setOrders(prev => prev.map(o => o.id === cancelModal.orderId ? { ...o, cancellation_status: 'requested', cancellation_reason: cancelModal.reason } : o));
+    setCancelModal({open: false, orderId: '', reason: ''});
+    setActionLoading(false);
   }
 
-  // Handle Complete Order (Upload Photo)
   function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
@@ -93,45 +70,18 @@ function OrderList() {
   async function submitComplete() {
     if (!completeModal.photoBase64) return alert('Silakan unggah foto bukti terima barang');
     setActionLoading(true);
-    try {
-      await fetch('/api/orders', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          order_id: completeModal.orderId, 
-          status: 'selesai', 
-          completion_photo_base64: completeModal.photoBase64 
-        })
-      });
-      setCompleteModal({open: false, orderId: '', photoBase64: ''});
-      fetchOrders();
-    } catch (e) {
-      alert('Gagal menyelesaikan pesanan');
-    } finally {
-      setActionLoading(false);
-    }
+    await new Promise(r => setTimeout(r, 800));
+    setOrders(prev => prev.map(o => o.id === completeModal.orderId ? { ...o, status: 'selesai', completion_photo_base64: completeModal.photoBase64 } : o));
+    setCompleteModal({open: false, orderId: '', photoBase64: ''});
+    setActionLoading(false);
   }
 
-  // Handle Review
   async function submitReview() {
     setActionLoading(true);
-    try {
-      await fetch('/api/reviews', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          order_id: reviewModal.orderId, 
-          product_id: reviewModal.productId, 
-          buyer_id: user?.id, 
-          rating: reviewModal.rating, 
-          comment: reviewModal.comment 
-        })
-      });
-      setReviewModal({open: false, orderId: '', productId: '', rating: 5, comment: ''});
-      fetchOrders();
-    } catch (e) {
-      alert('Gagal mengirim ulasan');
-    } finally {
-      setActionLoading(false);
-    }
+    await new Promise(r => setTimeout(r, 800));
+    setOrders(prev => prev.map(o => o.id === reviewModal.orderId ? { ...o, is_reviewed: true } : o));
+    setReviewModal({open: false, orderId: '', productId: '', rating: 5, comment: ''});
+    setActionLoading(false);
   }
 
   return (
@@ -143,123 +93,117 @@ function OrderList() {
             </div>
             <div>
                <h3 className="text-sm font-bold uppercase tracking-widest text-green-900 mb-1">Pembayaran Berhasil / COD Terkonfirmasi!</h3>
-               <p className="text-green-800 text-sm">Pesanan Anda dengan ID <strong>{orderIdParam}</strong> sedang menunggu diproses.</p>
+               <p className="text-green-800 text-sm">Pesanan Anda dengan ID <strong>{orderIdParam || 'BARU'}</strong> sedang menunggu diproses.</p>
             </div>
           </div>
         )}
 
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {orders.length === 0 ? (
-               <div className="bg-white border border-gray-200 border-t-4 border-t-primary-600 p-12 text-center shadow-sm">
-                  <ShoppingBag className="w-12 h-12 text-primary-200 mx-auto mb-4" />
-                  <h2 className="text-lg font-bold text-primary-900 mb-2">Belum ada pesanan</h2>
-                  <p className="text-gray-500 text-[11px] font-bold uppercase tracking-widest mb-6">Ayo mulai belanja produk-produk hebat dari desa kita.</p>
-                  <Link href="/umkm" className="inline-block bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest py-3 px-8 hover:bg-primary-950 transition-colors">
-                    Mulai Belanja
-                  </Link>
-               </div>
-            ) : (
-               orders.map(order => {
-                 const sc = statusConfig[order.status] || statusConfig.pending;
-                 const StatusIcon = sc.icon;
-                 const orderDate = new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-                 const orderItems = order.order_items || [];
-                 const firstItem = orderItems[0];
-                 const productName = firstItem?.products?.name || 'Produk Marketplace';
-                 const productImage = firstItem?.products?.image_url || '';
-                 const totalItems = orderItems.reduce((s: number, i: any) => s + (i.quantity || 1), 0);
-                 
-                 const canCancel = ['pending', 'terbayar', 'diproses'].includes(order.status) && !order.cancellation_status;
-                 const isCancelRequested = order.cancellation_status === 'requested';
+        <div className="space-y-4">
+          {orders.length === 0 ? (
+             <div className="bg-white border border-gray-200 border-t-4 border-t-primary-600 p-12 text-center shadow-sm">
+                <ShoppingBag className="w-12 h-12 text-primary-200 mx-auto mb-4" />
+                <h2 className="text-lg font-bold text-primary-900 mb-2">Belum ada pesanan</h2>
+                <p className="text-gray-500 text-[11px] font-bold uppercase tracking-widest mb-6">Ayo mulai belanja produk-produk hebat dari desa kita.</p>
+                <Link href="/umkm" className="inline-block bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest py-3 px-8 hover:bg-primary-950 transition-colors">
+                  Mulai Belanja
+                </Link>
+             </div>
+          ) : (
+             orders.map(order => {
+               const sc = statusConfig[order.status] || statusConfig.pending;
+               const StatusIcon = sc.icon;
+               const orderDate = new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+               const orderItems = order.order_items || [];
+               const firstItem = orderItems[0];
+               const productName = firstItem?.products?.name || 'Produk Marketplace';
+               const productImage = firstItem?.products?.image_url || '';
+               const totalItems = orderItems.reduce((s: number, i: any) => s + (i.quantity || 1), 0);
+               
+               const canCancel = ['pending', 'terbayar', 'diproses'].includes(order.status) && !order.cancellation_status;
+               const isCancelRequested = order.cancellation_status === 'requested';
 
-                 return (
-                   <div key={order.id} className="bg-white border border-gray-200 shadow-sm overflow-hidden hover:border-primary-400 transition-colors">
-                      <div className="border-b border-gray-200 bg-gray-50/50 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-                         <div className="flex items-center gap-3">
-                            <div className="bg-white p-2 border border-primary-200">
-                               <Package className="w-4 h-4 text-primary-600" />
-                            </div>
-                            <div>
-                               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-0.5">Belanja • {orderDate}</p>
-                               <p className="text-xs font-mono text-primary-700">{order.id}</p>
-                            </div>
-                         </div>
-                         <div className="flex items-center gap-3">
-                            <span className={`px-3 py-1 text-[9px] font-bold uppercase tracking-widest border flex items-center gap-1.5 ${sc.color}`}>
-                               <StatusIcon className="w-3 h-3" />
-                               {sc.label}
-                            </span>
-                            <span className="text-gray-300">|</span>
-                            <span className="text-sm font-bold text-gray-900">{formatRupiah(order.total_amount)}</span>
+               return (
+                 <div key={order.id} className="bg-white border border-gray-200 shadow-sm overflow-hidden hover:border-primary-400 transition-colors">
+                    <div className="border-b border-gray-200 bg-gray-50/50 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+                       <div className="flex items-center gap-3">
+                          <div className="bg-white p-2 border border-primary-200">
+                             <Package className="w-4 h-4 text-primary-600" />
+                          </div>
+                          <div>
+                             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-0.5">Belanja • {orderDate}</p>
+                             <p className="text-xs font-mono text-primary-700">{order.id}</p>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-3">
+                          <span className={`px-3 py-1 text-[9px] font-bold uppercase tracking-widest border flex items-center gap-1.5 ${sc.color}`}>
+                             <StatusIcon className="w-3 h-3" />
+                             {sc.label}
+                          </span>
+                          <span className="text-gray-300">|</span>
+                          <span className="text-sm font-bold text-gray-900">{formatRupiah(order.total_amount)}</span>
+                       </div>
+                    </div>
+
+                    {isCancelRequested && (
+                      <div className="px-6 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2 text-xs text-amber-800 font-bold uppercase tracking-widest">
+                         <AlertCircle className="w-4 h-4" /> Pengajuan pembatalan menunggu persetujuan penjual.
+                      </div>
+                    )}
+
+                    <div className="p-6 flex items-center justify-between">
+                       <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200 relative overflow-hidden">
+                             {productImage ? (
+                               <Image src={productImage} alt="" fill className="object-cover" />
+                             ) : (
+                               <Package className="w-6 h-6 text-gray-400 absolute z-0" />
+                             )}
+                          </div>
+                          <div>
+                             <h4 className="font-bold text-gray-800">{productName}</h4>
+                             <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500 mt-1">
+                               {totalItems} BARANG{orderItems.length > 1 ? ` (${orderItems.length} produk)` : ''}
+                             </p>
+                          </div>
+                       </div>
+                    </div>
+
+                    {order.awb_number && (
+                      <div className="px-6 py-3 bg-indigo-50/50 border-t border-indigo-100 flex items-center justify-between">
+                         <div className="flex items-center gap-2 text-xs text-indigo-800 font-bold uppercase tracking-widest">
+                            <Truck className="w-4 h-4" /> NO. RESI: {order.awb_number}
                          </div>
                       </div>
+                    )}
 
-                      {isCancelRequested && (
-                        <div className="px-6 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2 text-xs text-amber-800 font-bold uppercase tracking-widest">
-                           <AlertCircle className="w-4 h-4" /> Pengajuan pembatalan menunggu persetujuan penjual.
-                        </div>
-                      )}
-
-                      <div className="p-6 flex items-center justify-between">
-                         <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200 relative overflow-hidden">
-                               {productImage ? (
-                                 <Image src={productImage} alt="" fill className="object-cover" />
-                               ) : (
-                                 <Package className="w-6 h-6 text-gray-400 absolute z-0" />
-                               )}
-                            </div>
-                            <div>
-                               <h4 className="font-bold text-gray-800">{productName}</h4>
-                               <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500 mt-1">
-                                 {totalItems} BARANG{orderItems.length > 1 ? ` (${orderItems.length} produk)` : ''}
-                               </p>
-                            </div>
-                         </div>
-                      </div>
-
-                      {order.awb_number && (
-                        <div className="px-6 py-3 bg-indigo-50/50 border-t border-indigo-100 flex items-center justify-between">
-                           <div className="flex items-center gap-2 text-xs text-indigo-800 font-bold uppercase tracking-widest">
-                              <Truck className="w-4 h-4" /> NO. RESI: {order.awb_number}
-                           </div>
-                        </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end gap-3">
-                         {canCancel && (
-                           <button onClick={() => setCancelModal({open: true, orderId: order.id, reason: ''})} className="px-4 py-2 border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 text-[10px] font-bold uppercase tracking-widest transition-colors">
-                             {order.status === 'pending' ? 'Batalkan Pesanan' : 'Ajukan Pembatalan'}
-                           </button>
-                         )}
-                         {order.status === 'dikirim' && (
-                           <button onClick={() => setCompleteModal({open: true, orderId: order.id, photoBase64: ''})} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold uppercase tracking-widest transition-colors">
-                             Selesaikan Pesanan
-                           </button>
-                         )}
-                         {order.status === 'selesai' && !order.is_reviewed && firstItem?.product_id && (
-                           <button onClick={() => setReviewModal({open: true, orderId: order.id, productId: firstItem.product_id, rating: 5, comment: ''})} className="px-4 py-2 bg-primary-800 hover:bg-primary-950 text-white text-[10px] font-bold uppercase tracking-widest transition-colors">
-                             Beri Ulasan
-                           </button>
-                         )}
-                         {order.status === 'selesai' && order.is_reviewed && (
-                           <span className="px-4 py-2 text-primary-700 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
-                             <CheckCircle2 className="w-3.5 h-3.5" /> Telah Diulas
-                           </span>
-                         )}
-                      </div>
-                   </div>
-                 );
-               })
-            )}
-          </div>
-        )}
+                    {/* Action Buttons */}
+                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end gap-3">
+                       {canCancel && (
+                         <button onClick={() => setCancelModal({open: true, orderId: order.id, reason: ''})} className="px-4 py-2 border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 text-[10px] font-bold uppercase tracking-widest transition-colors">
+                           {order.status === 'pending' ? 'Batalkan Pesanan' : 'Ajukan Pembatalan'}
+                         </button>
+                       )}
+                       {order.status === 'dikirim' && (
+                         <button onClick={() => setCompleteModal({open: true, orderId: order.id, photoBase64: ''})} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold uppercase tracking-widest transition-colors">
+                           Selesaikan Pesanan
+                         </button>
+                       )}
+                       {order.status === 'selesai' && !order.is_reviewed && firstItem?.product_id && (
+                         <button onClick={() => setReviewModal({open: true, orderId: order.id, productId: firstItem.product_id, rating: 5, comment: ''})} className="px-4 py-2 bg-primary-800 hover:bg-primary-950 text-white text-[10px] font-bold uppercase tracking-widest transition-colors">
+                           Beri Ulasan
+                         </button>
+                       )}
+                       {order.status === 'selesai' && order.is_reviewed && (
+                         <span className="px-4 py-2 text-primary-700 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
+                           <CheckCircle2 className="w-3.5 h-3.5" /> Telah Diulas
+                         </span>
+                       )}
+                    </div>
+                 </div>
+               );
+             })
+          )}
+        </div>
 
         {/* --- MODALS --- */}
         

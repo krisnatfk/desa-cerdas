@@ -12,35 +12,22 @@ export default function AdminStoreApprovalPage() {
   const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
-    loadStores();
+    // Simulate network load
+    const timer = setTimeout(() => {
+      setStores([
+        { id: '1', name: 'Toko Berkah', description: 'Menjual barang sembako', user_id: 'warga_1', status: 'active', created_at: new Date().toISOString() },
+        { id: '2', name: 'Kerajinan Tangan Desa', description: 'Produk anyaman bambu asli', user_id: 'warga_2', status: 'pending', created_at: new Date().toISOString() },
+        { id: '3', name: 'Kue Basah Ibu Ani', description: 'Aneka kue basah tradisional', user_id: 'warga_3', status: 'rejected', created_at: new Date(Date.now() - 86400000).toISOString() },
+      ]);
+      setLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
-
-  async function loadStores() {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/stores');
-      const data = await res.json();
-      setStores(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to load stores:', err);
-    }
-    setLoading(false);
-  }
 
   async function updateStoreStatus(storeId: string, status: 'active' | 'rejected' | 'pending') {
     setUpdating(storeId);
-    try {
-      await fetch(`/api/stores/${storeId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      setStores((prev) =>
-        prev.map((s) => (s.id === storeId ? { ...s, status } : s))
-      );
-    } catch (err) {
-      console.error('Failed to update store:', err);
-    }
+    await new Promise(r => setTimeout(r, 600)); // Simulasi API
+    setStores((prev) => prev.map((s) => (s.id === storeId ? { ...s, status } : s)));
     setUpdating(null);
   }
 

@@ -5,31 +5,22 @@ import Image from 'next/image';
 import { Store, Trash2, Phone, Plus, Loader2 } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import AddProductModal from '@/components/admin/AddProductModal';
-import { supabase } from '@/lib/supabase';
+import { dummyProducts } from '@/lib/dummy-data';
 import { formatRupiah } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
 export default function AdminUMKMPage() {
   const t = useTranslations('admin_umkm');
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<any[]>(dummyProducts);
+  const [loading, setLoading] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
-    async function loadProducts() {
-      if (!supabase) return setLoading(false);
-      const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      if (data) setProducts(data);
-      setLoading(false);
-    }
-    loadProducts();
+    // no-op for static demo
   }, []);
 
   async function deleteProduct(id: string) {
     if (confirm(t('confirm_delete'))) {
-      if (supabase) {
-        await supabase.from('products').delete().eq('id', id);
-      }
       setProducts((p) => p.filter((prod) => prod.id !== id));
     }
   }

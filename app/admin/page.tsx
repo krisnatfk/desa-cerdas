@@ -16,7 +16,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { StatCardSkeleton, TableSkeleton } from '@/components/ui/Skeletons';
-import { supabase } from '@/lib/supabase';
+import { dummyReports, dummyProducts } from '@/lib/dummy-data';
 import { StatCard } from '@/components/ui/StatCard';
 import { AIInsightCard } from '@/components/admin/AIInsightCard';
 import { CategoryBarChart, TrendLineChart } from '@/components/admin/DashboardCharts';
@@ -28,36 +28,18 @@ import { useTranslations } from 'next-intl';
 export default function AdminDashboardPage() {
   const t = useTranslations('admin_dashboard');
   const [stats, setStats] = useState({
-    totalReports: 0,
-    pendingReports: 0,
-    inProgressReports: 0,
-    completedReports: 0,
-    activeUMKM: 0,
+    totalReports: dummyReports.length,
+    pendingReports: dummyReports.filter(r => r.status === 'pending').length,
+    inProgressReports: dummyReports.filter(r => r.status === 'in_progress').length,
+    completedReports: dummyReports.filter(r => r.status === 'completed').length,
+    activeUMKM: dummyProducts.length,
     totalCitizens: 1250, // Demo count
   });
-  const [recentReports, setRecentReports] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [recentReports, setRecentReports] = useState<any[]>(dummyReports.slice(0, 5));
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function loadDashboard() {
-      if (!supabase) return setLoading(false);
-      const { data: reportsData } = await supabase.from('reports').select('*').order('created_at', { ascending: false });
-      const { count: umkmCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
-
-      if (reportsData) {
-        setRecentReports(reportsData.slice(0, 5));
-        setStats({
-          totalReports: reportsData.length,
-          pendingReports: reportsData.filter(r => r.status === 'pending').length,
-          inProgressReports: reportsData.filter(r => r.status === 'in_progress').length,
-          completedReports: reportsData.filter(r => r.status === 'completed').length,
-          activeUMKM: umkmCount || 0,
-          totalCitizens: 1250,
-        });
-      }
-      setLoading(false);
-    }
-    loadDashboard();
+    // no-op for static demo
   }, []);
 
 

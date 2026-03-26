@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { ClerkProvider } from '@clerk/nextjs';
 import { Raleway } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
@@ -22,20 +21,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const messages = await getMessages();
 
   return (
-    <ClerkProvider>
-      <html lang={locale}>
-        <body className={`flex flex-col min-h-screen bg-bg ${raleway.className}`}>
-          <NextIntlClientProvider messages={messages} locale={locale}>
-            <CartProvider>
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer />
-              {/* Global floating SOS emergency button — visible on all pages */}
-              <SOSButton />
-            </CartProvider>
-          </NextIntlClientProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang={locale}>
+      <body className={`flex flex-col min-h-screen bg-bg ${raleway.className}`}>
+        <NextIntlClientProvider messages={messages} locale={locale}>
+          <CartProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            {/* Global floating SOS emergency button — visible on all pages */}
+            <SOSButton />
+          </CartProvider>
+        </NextIntlClientProvider>
+      </body>
+    </html>
   );
 }

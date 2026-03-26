@@ -1,13 +1,10 @@
 'use client';
-/**
- * app/edukasi/page.tsx — Live Supabase Data
- */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { GraduationCap, Star, Users, Clock, ChevronRight, Search, BookOpen, Award } from 'lucide-react';
 import Link from 'next/link';
-import { GraduationCap, Star, Users, Clock, ChevronRight, Search, BookOpen, Award, Loader2 } from 'lucide-react';
-import { CardGridSkeleton } from '@/components/ui/Skeletons';
-import { supabase } from '@/lib/supabase';
 import { useTranslations } from 'next-intl';
+import { dummyModules } from '@/lib/dummy-data';
+
 
 type Module = {
   id: string; title: string; description: string | null; category: string;
@@ -45,7 +42,7 @@ function ModuleCard({ mod, t }: { mod: Module; t: any }) {
     Lanjutan: 'bg-primary-600 text-white border-primary-600',
   };
   return (
-    <div className="group bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col p-6">
+    <Link href={`/edukasi/${mod.id}`} className="group bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col p-6 block">
       {mod.image_url ? (
         <div className="relative aspect-square mb-6 overflow-hidden bg-gray-100 h-48 w-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -73,39 +70,28 @@ function ModuleCard({ mod, t }: { mod: Module; t: any }) {
           <span className="text-[10px] uppercase font-bold text-gray-900 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">{t('learn')} <ChevronRight className="w-3.5 h-3.5" /></span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
 export default function EdukasiPage() {
   const t = useTranslations('edukasi');
   const CATEGORIES = [t('cat_all'), t('cat_biz'), t('cat_agri'), t('cat_env'), t('cat_fin'), t('cat_health'), t('cat_art')];
-  
-  const [modules, setModules] = useState<Module[]>([]);
-  const [loading, setLoading] = useState(true);
+  const DB_CATS = ['Semua', 'Bisnis & Marketing', 'Pertanian', 'Lingkungan', 'Keuangan', 'Kesehatan & Keselamatan', 'Kerajinan & Seni'];
+
+  const [modules] = useState<any[]>(dummyModules);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(t('cat_all'));
 
-  useEffect(() => {
-    async function load() {
-      if (!supabase) { setLoading(false); return; }
-      const { data } = await supabase.from('training_modules').select('*').eq('is_published', true).order('created_at', { ascending: false });
-      setModules(data ?? []);
-      setLoading(false);
-    }
-    load();
-  }, []);
-
   const filtered = modules.filter(m => {
     const matchSearch = m.title.toLowerCase().includes(search.toLowerCase());
-    
-    const DB_CATS = ['Semua', 'Bisnis & Marketing', 'Pertanian', 'Lingkungan', 'Keuangan', 'Kesehatan & Keselamatan', 'Kerajinan & Seni'];
     const sIdx = CATEGORIES.indexOf(category);
     const dbCat = DB_CATS[sIdx];
-    
     const matchCat = sIdx === 0 || m.category === dbCat;
     return matchSearch && matchCat;
   });
+
+
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-24">
@@ -130,10 +116,7 @@ export default function EdukasiPage() {
            <input type="text" placeholder={t('search_placeholder')} value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white text-xs border border-gray-200 focus:border-primary-900 focus:outline-none transition-colors" />
         </div>
       </div>
-      {loading ? (
-        <CardGridSkeleton count={6} cols={3} />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map(mod => <ModuleCard key={mod.id} mod={mod} t={t} />)}
           {filtered.length === 0 && (
             <div className="col-span-full text-center py-16">
@@ -142,7 +125,6 @@ export default function EdukasiPage() {
             </div>
           )}
         </div>
-      )}
     </div>
   );
 }

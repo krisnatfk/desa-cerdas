@@ -1,84 +1,170 @@
 'use client';
-/**
- * app/auth/login/page.tsx — Premium Redesign v3 (Powered by Clerk pre-built UI)
- */
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { SignIn } from '@clerk/nextjs';
-import { Shield, Users, BarChart3, Sparkles } from 'lucide-react';
-
-const STATS = [
-  { icon: Users,     label: 'Warga Terdaftar', value: '1.2K+' },
-  { icon: BarChart3, label: 'Laporan Masuk',   value: '148' },
-  { icon: Shield,    label: 'Masalah Selesai', value: '48%' },
-  { icon: Sparkles,  label: 'UMKM Lokal',      value: '67' },
-];
+import { useTranslations } from 'next-intl';
+import { useAuth } from '@/hooks/useAuth';
+import { DEMO_ACCOUNTS } from '@/lib/auth';
+import { Eye, EyeOff, Loader2, CheckCircle, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
+  const t = useTranslations('auth');
+  const { login } = useAuth();
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    setTimeout(() => {
+      const user = login(email, password);
+      if (!user) {
+        setError(t('error'));
+        setLoading(false);
+        return;
+      }
+      setSuccess(true);
+      setTimeout(() => router.push('/'), 1200);
+    }, 800);
+  };
+
+  const fillDemo = (acc: typeof DEMO_ACCOUNTS[0]) => {
+    setEmail(acc.email);
+    setPassword('demo1234');
+    setError('');
+  };
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex">
-      {/* ── Left decorative panel ─────────────────────────── */}
-      <div className="hidden lg:flex lg:w-[45%] xl:w-1/2 relative overflow-hidden bg-primary-950">
-        <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white border-r border-primary-900 border-opacity-20">
-          <div className="mb-12">
-            <Image src="/logo-putih.webp" alt="DesaMind" width={180} height={48} className="h-14 w-auto object-contain" priority />
-          </div>
+    <div className="min-h-screen flex flex-col md:flex-row bg-white">
+      {/* ── Left Side: Brand Panel (Hidden on Mobile) ── */}
+      <div className="hidden md:flex flex-col justify-between w-1/2 bg-primary-950 p-12 relative overflow-hidden">
+        {/* Decorative background */}
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-primary-800 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute top-20 -left-20 w-72 h-72 bg-primary-700 rounded-full opacity-10 blur-3xl"></div>
 
-          <h2 className="text-4xl font-semibold text-center mb-6 leading-tight">
-            Selamat Datang di<br />
-            <span className="text-accent-500">DesaMind AI</span>
-          </h2>
-          <p className="text-primary-300 text-[11px] font-bold uppercase tracking-widest text-center max-w-sm leading-relaxed mb-12">
-            Platform cerdas warga Desa Labuhan Maringgai. Laporkan masalah, akses layanan, dan bangun desa bersama.
+        <div className="relative z-10">
+          <Link href="/">
+            <Image src="/logo-putih.webp" alt="DesaMind" width={160} height={44} className="h-10 w-auto object-contain" />
+          </Link>
+        </div>
+
+        <div className="relative z-10 mb-20">
+          <h1 className="text-4xl text-white font-semibold leading-tight mb-6">
+            {t('login_title_1')} <br />
+            <span className="text-primary-300">{t('login_title_2')}</span> <br />
+            {t('login_title_3')}
+          </h1>
+          <p className="text-primary-200/80 text-sm max-w-sm leading-relaxed">
+            {t('login_desc')}
           </p>
+        </div>
 
-          <div className="grid grid-cols-2 gap-px w-full max-w-sm bg-primary-900 bg-opacity-30 border border-primary-900 border-opacity-30">
-            {STATS.map(({ icon: Icon, label, value }) => (
-              <div key={label} className="bg-primary-950 p-6 flex flex-col items-center text-center">
-                <Icon className="w-5 h-5 text-accent-500 mb-4" />
-                <div className="text-2xl font-semibold mb-1">{value}</div>
-                <div className="text-[9px] font-bold uppercase tracking-widest text-primary-400">{label}</div>
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-2 mt-10 text-[9px] font-bold uppercase tracking-widest text-primary-500">
-            <Shield className="w-3.5 h-3.5" />
-            <span>Data aman & terenkripsi · Build with Clerk</span>
-          </div>
+        <div className="relative z-10 flex items-center gap-4 text-primary-400 text-xs font-medium tracking-widest uppercase">
+          <span>© 2026 DesaMind</span>
+          <div className="w-4 h-px bg-primary-800"></div>
+          <span>{t('login_mode')}</span>
         </div>
       </div>
 
-      {/* ── Right form panel ──────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-bg overflow-y-auto">
-        <div className="w-full max-w-md">
-          <div className="flex items-center gap-2 mb-12 lg:hidden justify-center">
-            <Image src="/logo.webp" alt="DesaMind" width={140} height={40} className="h-10 w-auto" />
+      {/* ── Right Side: Form Panel ── */}
+      <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 md:px-16 lg:px-24 py-12 bg-white relative">
+        {/* Mobile Header (Hidden on Desktop) */}
+        <div className="md:hidden flex flex-col mb-12">
+          <Link href="/">
+            <Image src="/logo.webp" alt="DesaMind" width={140} height={40} className="h-9 w-auto object-contain mb-6" />
+          </Link>
+          <h2 className="text-2xl font-bold text-gray-900">{t('welcome')}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t('welcome_desc')}</p>
+        </div>
+
+        <div className="w-full max-w-sm mx-auto">
+          <div className="hidden md:block mb-10">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">{t('login_acc_title')}</h2>
+            <p className="text-sm text-gray-500 tracking-wide">{t('login_acc_desc')}</p>
           </div>
-          
-          <div className="w-full flex justify-center">
-            <SignIn 
-              routing="hash" 
-              appearance={{
-                elements: {
-                  rootBox: "w-full",
-                  card: "shadow-none border p-8 border-gray-200 bg-white rounded-none w-full",
-                  headerTitle: "text-2xl font-semibold text-primary-900 mb-1",
-                  headerSubtitle: "text-[10px] font-bold uppercase tracking-widest text-gray-500",
-                  socialButtonsBlockButton: "rounded-none border border-gray-200 text-[10px] font-bold uppercase tracking-widest text-primary-900 hover:bg-gray-50 py-4 transition-colors",
-                  socialButtonsProviderIcon: "w-4 h-4",
-                  formButtonPrimary: "rounded-none bg-primary-800 hover:bg-primary-950 text-white font-bold uppercase tracking-widest text-[10px] py-4 transition-colors shadow-none mt-2",
-                  formFieldInput: "rounded-none border-gray-200 py-3 px-4 focus:ring-0 focus:border-primary-800 bg-gray-50 text-sm",
-                  formFieldLabel: "mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-500",
-                  dividerText: "text-[9px] font-bold uppercase tracking-widest text-gray-400 font-sans",
-                  dividerLine: "bg-gray-200",
-                  formFieldWarningText: "text-[10px] font-bold uppercase tracking-widest text-red-600",
-                  formFieldErrorText: "text-[10px] font-bold uppercase tracking-widest text-red-600",
-                  footerActionLink: "text-primary-800 font-bold uppercase tracking-widest hover:text-primary-950 transition-colors",
-                  footerActionText: "text-[10px] font-bold uppercase tracking-widest text-gray-400",
-                  identityPreviewEditButtonIcon: "text-primary-800",
-                }
-              }}
-            />
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {success && (
+              <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 text-sm font-medium rounded-xl border border-green-100">
+                <CheckCircle className="w-5 h-5 shrink-0" />
+                {t('success')}
+              </div>
+            )}
+            {error && (
+              <div className="p-4 bg-red-50 text-red-600 text-sm font-medium rounded-xl border border-red-100">{error}</div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{t('lbl_email')}</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="email@desamind.id"
+                required
+                className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-gray-400"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{t('lbl_pass')}</label>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Masukkan password"
+                  className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-gray-400 pr-12"
+                />
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
+                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || success}
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-primary-900 text-white rounded-xl text-sm font-semibold hover:bg-primary-950 disabled:opacity-70 transition-colors shadow-lg shadow-primary-900/20 border border-primary-900"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('btn_login')}
+              {!loading && <ArrowRight className="w-4 h-4" />}
+            </button>
+          </form>
+
+          {/* Demo accounts */}
+          <div className="mt-10 pt-8 border-t border-gray-100">
+            <p className="text-xs text-center font-medium text-gray-400 mb-4 uppercase tracking-wider">{t('demo_title')}</p>
+            <div className="grid grid-cols-2 gap-3">
+              {DEMO_ACCOUNTS.map(acc => (
+                <button
+                  key={acc.email}
+                  onClick={() => fillDemo(acc)}
+                  className="flex flex-col items-start px-4 py-3 border border-gray-200 rounded-xl hover:border-primary-300 hover:bg-primary-50 transition-colors group text-left"
+                >
+                  <span className="text-xs font-semibold text-gray-800 group-hover:text-primary-900">{acc.name}</span>
+                  <span className="text-[10px] text-gray-500 group-hover:text-primary-600 mt-0.5 capitalize">{acc.role}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-10 text-center">
+            <p className="text-sm text-gray-500">
+              {t('no_account')}{' '}
+              <Link href="/auth/register" className="font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+                {t('register_here')}
+              </Link>
+            </p>
           </div>
         </div>
       </div>

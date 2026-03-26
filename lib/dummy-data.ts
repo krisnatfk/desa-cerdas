@@ -66,8 +66,8 @@ export const dummyReports: Report[] = [
     description: 'Jalan utama menuju balai desa mengalami kerusakan parah dengan banyak lubang besar yang berbahaya bagi pengendara sepeda motor dan menyebabkan kecelakaan. Sudah beberapa bulan tidak diperbaiki.',
     category: 'Infrastruktur',
     status: 'in_progress',
-    lat: -6.2115,
-    lng: 106.8452,
+    lat: -5.3412,
+    lng: 105.7921,
     image_url: 'https://picsum.photos/seed/road1/800/500',
     upvotes: 47,
     comments_count: 12,
@@ -81,8 +81,8 @@ export const dummyReports: Report[] = [
     description: 'Sampah menumpuk sudah 2 minggu di depan gang masuk RW 05. Petugas kebersihan tidak datang mengangkut. Bau menyengat dan mengganggu warga sekitar serta berpotensi menjadi sarang penyakit.',
     category: 'Sampah',
     status: 'pending',
-    lat: -6.2089,
-    lng: 106.8471,
+    lat: -5.3389,
+    lng: 105.7952,
     image_url: 'https://picsum.photos/seed/trash1/800/500',
     upvotes: 32,
     comments_count: 8,
@@ -96,8 +96,8 @@ export const dummyReports: Report[] = [
     description: 'Saluran drainase di Jalan Melati tersumbat oleh sampah dan sedimentasi. Setiap hujan, air meluap ke jalan dan masuk ke rumah warga. Butuh segera dibersihkan.',
     category: 'Infrastruktur',
     status: 'pending',
-    lat: -6.2145,
-    lng: 106.8438,
+    lat: -5.3448,
+    lng: 105.7908,
     image_url: 'https://picsum.photos/seed/drain1/800/500',
     upvotes: 28,
     comments_count: 5,
@@ -111,8 +111,8 @@ export const dummyReports: Report[] = [
     description: 'Tiga titik lampu penerangan jalan umum di jalan utama RT 07 sudah mati selama 3 minggu. Kondisi sangat gelap di malam hari dan membahayakan keamanan warga.',
     category: 'Keamanan',
     status: 'completed',
-    lat: -6.2098,
-    lng: 106.8463,
+    lat: -5.3398,
+    lng: 105.7938,
     image_url: 'https://picsum.photos/seed/lamp1/800/500',
     upvotes: 56,
     comments_count: 15,
@@ -126,8 +126,8 @@ export const dummyReports: Report[] = [
     description: 'Posyandu di RT 03 sudah tidak memadai untuk melayani warga yang semakin bertambah. Anak-anak dan lansia harus antri sangat lama. Mohon diprioritaskan pembangunan posyandu baru.',
     category: 'Kesehatan',
     status: 'in_progress',
-    lat: -6.2067,
-    lng: 106.8489,
+    lat: -5.3367,
+    lng: 105.7963,
     image_url: 'https://picsum.photos/seed/health1/800/500',
     upvotes: 41,
     comments_count: 9,
@@ -141,14 +141,15 @@ export const dummyReports: Report[] = [
     description: 'Pohon besar di depan SDN 01 tumbang akibat angin kencang kemarin malam dan menutup setengah badan jalan. Berbahaya bagi pengguna jalan, terutama anak-anak sekolah.',
     category: 'Lingkungan',
     status: 'completed',
-    lat: -6.2134,
-    lng: 106.8421,
+    lat: -5.3435,
+    lng: 105.7899,
     image_url: 'https://picsum.photos/seed/tree1/800/500',
     upvotes: 19,
     comments_count: 4,
     created_at: '2026-03-19T07:45:00Z',
   },
 ];
+
 
 // ---- DUMMY PRODUCTS (UMKM) with featured + sales_count ----
 export const dummyProducts: Product[] = [
@@ -403,3 +404,79 @@ export const dummyReportHistory: ReportHistory[] = [
   { id: 'rh1', report_id: '1', status: 'pending', note: 'Laporan baru diterima oleh sistem. Menunggu verifikasi admin.', changed_by: 'Sistem', created_at: '2026-03-15T08:30:00Z' },
   { id: 'rh2', report_id: '1', status: 'in_progress', note: 'Laporan terverifikasi. Tim teknis dijadwalkan survei lapangan pada 18 Maret 2026.', changed_by: 'Admin Desa', created_at: '2026-03-16T09:00:00Z' },
 ];
+
+// ---- DIGITAL NOTICE BOARD (PENGUMUMAN) ----
+export type Announcement = {
+  id: string;
+  title: string;
+  category: 'Kesehatan' | 'Pemerintahan' | 'Umum' | 'Sosial';
+  content: string;
+  date: string;
+  is_important: boolean;
+};
+
+export const dummyAnnouncements: Announcement[] = [
+  { id: 'ann1', title: 'Jadwal Vaksinasi Polio Serentak', category: 'Kesehatan', content: 'Diwajibkan bagi seluruh warga yang memiliki balita usia 0-5 tahun untuk hadir di Balai Desa pada hari Sabtu, 28 Maret 2026 mulai pukul 08:00 WIB untuk mendapatkan vaksinasi polio gratis.', date: '2026-03-25T08:00:00Z', is_important: true },
+  { id: 'ann2', title: 'Rapat Musyawarah Perencanaan Pembangunan (Musrenbang) Desa', category: 'Pemerintahan', content: 'Mengundang seluruh Ketua RT, Ketua RW, dan Tokoh Masyarakat untuk hadir dalam Musrenbang Desa penetapan RKPDesa Tahun 2027 pada hari Selasa, 31 Maret 2026.', date: '2026-03-24T10:00:00Z', is_important: true },
+  { id: 'ann3', title: 'Penyaluran Bantuan Langsung Tunai (BLT) Dana Desa Bulan Maret', category: 'Sosial', content: 'Penyaluran BLT Dana Desa tahap 3 akan dilaksanakan hari Kamis, 26 Maret 2026. Kepada nama-nama yang terdaftar harap membawa fotokopi KTP dan KK terbaru.', date: '2026-03-22T09:30:00Z', is_important: false },
+  { id: 'ann4', title: 'Kerja Bakti Massal Menyambut Bulan Suci Ramadhan', category: 'Umum', content: 'Dihimbau kepada seluruh warga untuk melaksanakan kerja bakti serentak membersihkan lingkungan, masjid, dan mushola di wilayah RT masing-masing hari Minggu pagi.', date: '2026-03-20T14:00:00Z', is_important: false },
+  { id: 'ann5', title: 'Layanan Pembuatan KTP Keliling dari Disdukcapil', category: 'Pemerintahan', content: 'Mobil layanan keliling Disdukcapil Kabupaten akan standby di lapangan desa pada hari Jumat, 27 Maret 2026. Melayani perekaman KTP elektronik baru dan perbaikan data KK.', date: '2026-03-19T11:00:00Z', is_important: false },
+];
+
+// ---- GALLERY (GALERI KEGIATAN DESA) ----
+export type GalleryItem = {
+  id: string;
+  title: string;
+  category: 'PKK' | 'Karang Taruna' | 'Posyandu' | 'Kerja Bakti' | 'Lainnya';
+  date: string;
+  image_url: string;
+};
+
+export const dummyGallery: GalleryItem[] = [
+  { id: 'gal1', title: 'Lomba Tumpeng Ibu-ibu PKK', category: 'PKK', date: '2026-02-15', image_url: 'https://picsum.photos/seed/gal1/800/600' },
+  { id: 'gal2', title: 'Turnamen Futsal Antar RW', category: 'Karang Taruna', date: '2026-02-28', image_url: 'https://picsum.photos/seed/gal2/800/600' },
+  { id: 'gal3', title: 'Penimbangan Balita Ceria', category: 'Posyandu', date: '2026-03-05', image_url: 'https://picsum.photos/seed/gal3/800/600' },
+  { id: 'gal4', title: 'Kerja Bakti Bersihkan Sungai', category: 'Kerja Bakti', date: '2026-03-12', image_url: 'https://picsum.photos/seed/gal4/800/600' },
+  { id: 'gal5', title: 'Pelatihan Membuat Kerajinan Daur Ulang', category: 'PKK', date: '2026-03-18', image_url: 'https://picsum.photos/seed/gal5/800/600' },
+  { id: 'gal6', title: 'Peringatan Hari Kemerdekaan', category: 'Lainnya', date: '2025-08-17', image_url: 'https://picsum.photos/seed/gal6/800/600' },
+  { id: 'gal7', title: 'Pemilihan Ketua Pemuda', category: 'Karang Taruna', date: '2026-01-20', image_url: 'https://picsum.photos/seed/gal7/800/600' },
+  { id: 'gal8', title: 'Penyuluhan Gizi Ibu Hamil', category: 'Posyandu', date: '2026-03-01', image_url: 'https://picsum.photos/seed/gal8/800/600' },
+];
+
+// ---- APBDesa (TRANSPARANSI ANGGARAN VISUAL) ----
+export type APBDesProgram = {
+  name: string;
+  category: string;
+  budget: number;
+  status: 'Selesai' | 'Berjalan' | 'Direncanakan';
+};
+
+export type APBDesa = {
+  year: number;
+  total_budget: number;
+  realized: number;
+  allocations: { category: string; amount: number; color: string }[];
+  programs: APBDesProgram[];
+};
+
+export const dummyAPBDesa: APBDesa = {
+  year: 2026,
+  total_budget: 1250000000, // 1.25M
+  realized: 450000000,      // 450 Jt
+  allocations: [
+    { category: 'Penyelenggaraan Pemerintahan', amount: 350000000, color: 'bg-blue-500' },
+    { category: 'Pembangunan Desa (Infrastruktur)', amount: 500000000, color: 'bg-orange-500' },
+    { category: 'Pembinaan Kemasyarakatan', amount: 150000000, color: 'bg-green-500' },
+    { category: 'Pemberdayaan Masyarakat', amount: 200000000, color: 'bg-purple-500' },
+    { category: 'Penanggulangan Bencana', amount: 50000000, color: 'bg-red-500' },
+  ],
+  programs: [
+    { name: 'Pelebaran Jalan Utama Desa', category: 'Pembangunan Desa', budget: 150000000, status: 'Berjalan' },
+    { name: 'Pembangunan Posyandu Terpadu RT 03', category: 'Pembangunan Desa', budget: 85000000, status: 'Selesai' },
+    { name: 'Insentif RT/RW dan Kader Posyandu', category: 'Penyelenggaraan Pemerintahan', budget: 120000000, status: 'Berjalan' },
+    { name: 'Bantuan Langsung Tunai (BLT) Dana Desa', category: 'Pembinaan Kemasyarakatan', budget: 75000000, status: 'Berjalan' },
+    { name: 'Pelatihan Kewirausahaan UMKM', category: 'Pemberdayaan Masyarakat', budget: 45000000, status: 'Selesai' },
+    { name: 'Pengadaan Bibit Tanaman Obat Desa', category: 'Pemberdayaan Masyarakat', budget: 25000000, status: 'Direncanakan' },
+    { name: 'Pembangunan Saluran Irigasi Tersier', category: 'Pembangunan Desa', budget: 165000000, status: 'Direncanakan' },
+  ],
+};

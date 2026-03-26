@@ -25,11 +25,18 @@ export default function AdminSettingsPage() {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   useEffect(() => {
-    fetch('/api/settings')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setSettings(d); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const timer = setTimeout(() => {
+      setSettings({
+        village_name: 'Desa Labuhan Maringgai',
+        district_name: 'Labuhan Maringgai',
+        city_name: 'Lampung Timur',
+        province_name: 'Lampung',
+        center_lat: -5.321,
+        center_lng: 105.789
+      });
+      setLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   if (loading) {

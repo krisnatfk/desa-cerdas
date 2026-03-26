@@ -1,13 +1,10 @@
 'use client';
-/**
- * app/gotong-royong/page.tsx — Live Supabase Data
- */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Users, Calendar, MapPin, ChevronRight, UserPlus, Clock, CheckCircle2, Search } from 'lucide-react';
-import { CardGridSkeleton } from '@/components/ui/Skeletons';
-import { supabase } from '@/lib/supabase';
 import { useTranslations, useLocale } from 'next-intl';
+import { dummyActions } from '@/lib/dummy-data';
+
 
 type Action = {
   id: string; title: string; description: string; category: string;
@@ -28,7 +25,7 @@ function ActionCard({ action, t, locale }: { action: Action; t: any; locale: str
   
   const STATUS_LABEL: Record<string, string> = { open: t('stat_open'), full: t('stat_full'), done: t('stat_done') };
   return (
-    <div className="group bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col p-6">
+    <Link href={`/gotong-royong/${action.id}`} className="group bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col p-6 block">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-primary-600 mb-2">{action.category}</p>
@@ -53,7 +50,7 @@ function ActionCard({ action, t, locale }: { action: Action; t: any; locale: str
           <div className={`h-full transition-all ${pct >= 100 ? 'bg-gray-400' : pct > 70 ? 'bg-amber-400' : 'bg-primary-600'}`} style={{ width: `${pct}%` }} />
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -62,20 +59,10 @@ export default function GotongRoyongPage() {
   const locale = useLocale();
   const CATEGORIES = [t('cat_all'), t('cat_env'), t('cat_infra'), t('cat_social'), t('cat_edu'), t('cat_health')];
   
-  const [actions, setActions] = useState<Action[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [actions] = useState<Action[]>(dummyActions as any[]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(t('cat_all'));
 
-  useEffect(() => {
-    async function load() {
-      if (!supabase) { setLoading(false); return; }
-      const { data } = await supabase.from('community_actions').select('*').order('created_at', { ascending: false });
-      setActions(data ?? []);
-      setLoading(false);
-    }
-    load();
-  }, []);
 
   const filtered = actions.filter(a => {
     const matchSearch = a.title.toLowerCase().includes(search.toLowerCase());
@@ -132,19 +119,16 @@ export default function GotongRoyongPage() {
             <input type="text" placeholder={t('search_placeholder')} value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white text-xs border border-gray-200 focus:border-primary-900 focus:outline-none transition-colors" />
           </div>
         </div>
-        {loading ? (
-          <CardGridSkeleton count={6} cols={3} />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map(action => <ActionCard key={action.id} action={action} t={t} locale={locale} />)}
-            {filtered.length === 0 && (
-              <div className="col-span-full text-center py-16">
-                <div className="w-14 h-14 bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto mb-3"><Users className="w-7 h-7 text-gray-400" /></div>
-                <p className="font-semibold text-gray-700">{actions.length === 0 ? t('empty_none') : t('empty_not_found')}</p>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filtered.map(action => <ActionCard key={action.id} action={action as any} t={t} locale={locale} />)}
+          {filtered.length === 0 && (
+            <div className="col-span-full text-center py-16">
+              <div className="w-14 h-14 bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto mb-3"><Users className="w-7 h-7 text-gray-400" /></div>
+              <p className="font-semibold text-gray-700">{actions.length === 0 ? t('empty_none') : t('empty_not_found')}</p>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

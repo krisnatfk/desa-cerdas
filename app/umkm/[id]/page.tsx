@@ -7,7 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Star, ShoppingBag, Phone, ShoppingCart, Check, Loader2, Store } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { dummyProducts } from '@/lib/dummy-data';
 import { useCart } from '@/components/marketplace/CartContext';
 import { formatRupiah } from '@/lib/utils';
 import { useParams } from 'next/navigation';
@@ -24,21 +24,16 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     async function load() {
-      if (!supabase) return setLoading(false);
-
-      const { data: prod } = await supabase.from('products').select('*').eq('id', productId).single();
+      const prod = dummyProducts.find(p => p.id === productId);
       if (prod) setProduct(prod);
 
-      const { data: revs } = await supabase
-        .from('reviews')
-        .select(`
-          *,
-          orders ( buyer_name, completion_photo_base64 )
-        `)
-        .eq('product_id', productId)
-        .order('created_at', { ascending: false });
-      if (revs) setReviews(revs);
-
+      // dummy reviews
+      setReviews([
+        {
+          id: '1', rating: 5, comment: 'Produk sangat bagus dan sesuai deskripsi.', created_at: new Date().toISOString(),
+          orders: { buyer_name: 'Budi S.' }
+        }
+      ]);
       setLoading(false);
     }
     load();

@@ -1,48 +1,26 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Package, Pencil, Trash2, Loader2, Plus } from 'lucide-react';
 import { formatRupiah } from '@/lib/utils';
 import Link from 'next/link';
+import { dummyProducts } from '@/lib/dummy-data';
 
 export default function ManageProductsPage() {
-  const { user, isLoaded } = useUser();
   const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    if (!user) return;
-    try {
-      const storeRes = await fetch('/api/stores');
-      const stores = await storeRes.json();
-      const myStore = Array.isArray(stores) ? stores.find((s: any) => s.user_id === user.id) : null;
-      if (myStore && myStore.status === 'active') {
-        const prodRes = await fetch(`/api/products?store_id=${myStore.id}`);
-        const prods = await prodRes.json();
-        if (Array.isArray(prods)) setProducts(prods);
-      }
-    } catch { }
-    setLoading(false);
-  }, [user]);
-
   useEffect(() => {
-    if (isLoaded) loadData();
-  }, [isLoaded, loadData]);
+    // In semi-dynamic mode, we just load the dummy products to memory.
+    setProducts(dummyProducts);
+  }, []);
 
   async function handleDelete(productId: string) {
-    if (!confirm('Hapus produk ini?')) return;
+    if (!confirm('Hapus produk ini? (Hanya simulasi statis)')) return;
     setDeleting(productId);
-    try {
-      await fetch(`/api/products?id=${productId}`, { method: 'DELETE' });
-      await loadData();
-    } catch { }
+    await new Promise(r => setTimeout(r, 800)); // Simulate delay
+    setProducts(prev => prev.filter(p => p.id !== productId));
     setDeleting(null);
-  }
-
-  if (!isLoaded || loading) {
-    return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary-600" /></div>;
   }
 
   return (
@@ -80,7 +58,11 @@ export default function ManageProductsPage() {
                       <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                          <td className="py-4 flex items-center gap-4">
                             <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200 shadow-sm">
-                               <Image src={product.image_url} alt="" fill className="object-cover" />
+                               {product.image_url ? (
+                                  <Image src={product.image_url} alt="" fill className="object-cover" />
+                               ) : (
+                                  <Package className="w-6 h-6 m-auto text-gray-400 mt-3" />
+                               )}
                             </div>
                             <span className="font-semibold text-gray-900 line-clamp-2 max-w-[200px] leading-snug">{product.name}</span>
                          </td>
@@ -88,7 +70,7 @@ export default function ManageProductsPage() {
                             <span className="bg-primary-50 text-primary-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-primary-100">{product.category}</span>
                          </td>
                          <td className="py-4 font-bold text-gray-700">{formatRupiah(product.price)}</td>
-                         <td className="py-4 text-sm font-medium text-gray-600">{product.stock}</td>
+                         <td className="py-4 text-sm font-medium text-gray-600">{product.stock || 10}</td>
                          <td className="py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                                <Link href={`/umkm/toko/produk/tambah?edit=${product.id}`} className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100">

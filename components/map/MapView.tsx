@@ -6,7 +6,7 @@
  *   live Supabase report data, rich popups, and mini stats bar.
  * MUST be loaded via dynamic import with { ssr: false }.
  */
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -19,8 +19,8 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { supabase } from '@/lib/supabase';
 import { dummyReports } from '@/lib/dummy-data';
+
 
 // ─── Constants (defaults, overridden by DB) ───────────────────
 const DEFAULT_CENTER: [number, number] = [-5.3428912, 105.7938069];
@@ -177,62 +177,18 @@ type Report = {
 
 // ─── Main Component ───────────────────────────────────────────
 export default function MapView() {
-  const [reports, setReports] = useState<Report[]>([]);
+  // Always use dummy reports — no Supabase/API fetch needed
+  const [reports, setReports] = useState(
+    dummyReports.map(r => ({ ...r, lat: r.lat!, lng: r.lng! }))
+  );
   const [layer, setLayer] = useState<LayerKey>('street');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_CENTER);
-  const [boundaryCoords, setBoundaryCoords] = useState<[number, number][] | null>(null);
-  const [villageName, setVillageName] = useState('Desa Labuhan Maringgai');
-  const [villageInfo, setVillageInfo] = useState({ district: 'Labuhan Maringgai', city: 'Lampung Timur', province: 'Lampung' });
+  const [mapCenter] = useState<[number, number]>(DEFAULT_CENTER);
+  const [boundaryCoords] = useState<[number, number][] | null>(null);
+  const [villageName] = useState('Desa Labuhan Maringgai');
+  const [villageInfo] = useState({ district: 'Labuhan Maringgai', city: 'Lampung Timur', province: 'Lampung' });
 
-  // Load dynamic settings from admin configuration
-  useEffect(() => {
-    fetch('/api/settings')
-      .then(r => r.ok ? r.json() : null)
-      .then(s => {
-        if (!s) return;
-        setMapCenter([s.center_lat, s.center_lng]);
-        setVillageName(`Desa ${s.village_name}`);
-        setVillageInfo({ district: s.district_name, city: s.city_name, province: s.province_name });
-        if (s.boundary_geojson && s.boundary_geojson.length > 0 && s.boundary_geojson[0].length >= 4) {
-          // Convert GeoJSON [lng,lat] to Leaflet [lat,lng]
-          const leafletCoords: [number, number][] = s.boundary_geojson[0]
-            .slice(0, -1) // remove closing duplicate
-            .map((c: number[]) => [c[1], c[0]] as [number, number]);
-          setBoundaryCoords(leafletCoords);
-        }
-      })
-      .catch(() => {});
-  }, []);
-  useEffect(() => {
-    async function load() {
-      if (!supabase) {
-        setReports(
-          dummyReports
-            .filter(r => r.lat != null && r.lng != null)
-            .map(r => ({ ...r, lat: r.lat!, lng: r.lng! }))
-        );
-        return;
-      }
-      const { data } = await supabase
-        .from('reports')
-        .select('id,title,description,category,status,lat,lng,author_name,created_at')
-        .not('lat', 'is', null)
-        .not('lng', 'is', null)
-        .order('created_at', { ascending: false });
-      if (data && data.length > 0) {
-        setReports(data);
-      } else {
-        // fallback dummy
-        setReports(
-          dummyReports
-            .filter(r => r.lat != null && r.lng != null)
-            .map(r => ({ ...r, lat: r.lat!, lng: r.lng! }))
-        );
-      }
-    }
-    load();
-  }, []);
+
 
   const visible = useMemo(
     () => reports.filter(r => filterStatus === 'all' || r.status === filterStatus),

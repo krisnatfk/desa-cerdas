@@ -7,9 +7,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, Filter, Plus, FileText, SlidersHorizontal } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
-import { supabase } from '@/lib/supabase';
 import { ReportCard } from '@/components/ui/ReportCard';
 import { useTranslations } from 'next-intl';
+import { dummyReports } from '@/lib/dummy-data';
 
 export default function LaporanPage() {
   const t = useTranslations('laporan');
@@ -30,20 +30,12 @@ export default function LaporanPage() {
   const [status, setStatus] = useState('Semua');
 
   useEffect(() => {
-    async function loadReports() {
-      try {
-        const res = await fetch('/api/reports');
-        if (res.ok) {
-          const data = await res.json();
-          setReports(data);
-        }
-      } catch (err) {
-        console.error('Failed to load reports', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadReports();
+    // Simulate network load
+    const timer = setTimeout(() => {
+      setReports(dummyReports);
+      setLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   const filtered = reports.filter((r) => {

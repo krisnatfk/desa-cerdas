@@ -1,13 +1,10 @@
 'use client';
-/**
- * app/admin/gotong-royong/page.tsx
- * Admin: Manajemen Kegiatan Gotong Royong
- */
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Users, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
+import { dummyActions } from '@/lib/dummy-data';
+
 
 type Action = {
   id: string; title: string; description: string; category: string;
@@ -22,8 +19,8 @@ export default function AdminGotongRoyongPage() {
   const t = useTranslations('admin_gotong_royong');
   const STATUS_LABEL: Record<string, string> = { open: t('status_open'), full: t('status_full'), done: t('status_done') };
   
-  const [actions, setActions] = useState<Action[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [actions, setActions] = useState<Action[]>(dummyActions as any[]);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -31,41 +28,39 @@ export default function AdminGotongRoyongPage() {
   const [error, setError] = useState('');
 
   async function load() {
-    setLoading(true);
-    if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from('community_actions').select('*').order('created_at', { ascending: false });
-    setActions(data ?? []);
-    setLoading(false);
+    // no-op for static demo
   }
 
   useEffect(() => { load(); }, []);
 
   async function save() {
-    if (!supabase || !form.title) return;
+    if (!form.title) return;
     setSaving(true); setError('');
-    const payload = { ...form, max_participants: Number(form.max_participants), current_participants: Number(form.current_participants) };
-    const { error: err } = editId
-      ? await supabase.from('community_actions').update(payload).eq('id', editId)
-      : await supabase.from('community_actions').insert(payload);
-    setSaving(false);
-    if (err) { setError(err.message); return; }
-    setShowForm(false); setEditId(null); setForm(EMPTY); load();
+    setTimeout(() => {
+      const payload = { ...form, max_participants: Number(form.max_participants), current_participants: Number(form.current_participants) };
+      if (editId) {
+        setActions(prev => prev.map(a => a.id === editId ? { ...a, ...payload } as any : a));
+      } else {
+        setActions(prev => [{ id: Math.random().toString(), created_at: new Date().toISOString(), ...payload } as any, ...prev]);
+      }
+      setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
+    }, 500);
   }
 
   async function del(id: string) {
-    if (!supabase || !confirm(t('confirm_delete'))) return;
-    await supabase.from('community_actions').delete().eq('id', id); load();
+    if (!confirm(t('confirm_delete'))) return;
+    setActions(prev => prev.filter(a => a.id !== id));
   }
 
   async function changeStatus(id: string, status: string) {
-    if (!supabase) return;
-    await supabase.from('community_actions').update({ status }).eq('id', id); load();
+    setActions(prev => prev.map(a => a.id === id ? { ...a, status } : a));
   }
 
   function startEdit(a: Action) {
     setForm({ title: a.title, description: a.description, category: a.category, date: a.date ?? '', time: a.time ?? '', location: a.location ?? '', max_participants: a.max_participants, current_participants: a.current_participants, status: a.status });
     setEditId(a.id); setShowForm(true);
   }
+
 
   return (
     <div>

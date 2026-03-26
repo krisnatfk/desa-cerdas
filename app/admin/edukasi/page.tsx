@@ -1,13 +1,10 @@
 'use client';
-/**
- * app/admin/edukasi/page.tsx
- * Admin: Manajemen Modul Edukasi & Pelatihan
- */
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { GraduationCap, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, Eye, EyeOff } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
+import { dummyModules } from '@/lib/dummy-data';
+
 
 type Module = {
   id: string; title: string; description: string | null; category: string;
@@ -20,8 +17,8 @@ const EMPTY = { title: '', description: '', category: 'Bisnis & Marketing', leve
 export default function AdminEdukasiPage() {
   const t = useTranslations('admin_edukasi');
   
-  const [modules, setModules] = useState<Module[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [modules, setModules] = useState<Module[]>(dummyModules as any[]);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -29,36 +26,34 @@ export default function AdminEdukasiPage() {
   const [error, setError] = useState('');
 
   async function load() {
-    setLoading(true);
-    if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from('training_modules').select('*').order('created_at', { ascending: false });
-    setModules(data ?? []);
-    setLoading(false);
+    // no-op for static demo
   }
 
   useEffect(() => { load(); }, []);
 
   async function save() {
-    if (!supabase || !form.title) return;
+    if (!form.title) return;
     setSaving(true); setError('');
-    const payload = { ...form, duration_minutes: Number(form.duration_minutes), rating: Number(form.rating), enrolled: Number(form.enrolled) };
-    const { error: err } = editId
-      ? await supabase.from('training_modules').update(payload).eq('id', editId)
-      : await supabase.from('training_modules').insert(payload);
-    setSaving(false);
-    if (err) { setError(err.message); return; }
-    setShowForm(false); setEditId(null); setForm(EMPTY); load();
+    setTimeout(() => {
+      const payload = { ...form, duration_minutes: Number(form.duration_minutes), rating: Number(form.rating), enrolled: Number(form.enrolled) };
+      if (editId) {
+        setModules(prev => prev.map(m => m.id === editId ? { ...m, ...payload } as any : m));
+      } else {
+        setModules(prev => [{ id: Math.random().toString(), created_at: new Date().toISOString(), ...payload } as any, ...prev]);
+      }
+      setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
+    }, 500);
   }
 
   async function del(id: string) {
-    if (!supabase || !confirm(t('confirm_delete'))) return;
-    await supabase.from('training_modules').delete().eq('id', id); load();
+    if (!confirm(t('confirm_delete'))) return;
+    setModules(prev => prev.filter(m => m.id !== id));
   }
 
   async function togglePublish(id: string, current: boolean) {
-    if (!supabase) return;
-    await supabase.from('training_modules').update({ is_published: !current }).eq('id', id); load();
+    setModules(prev => prev.map(m => m.id === id ? { ...m, is_published: !current } : m));
   }
+
 
   function startEdit(m: Module) {
     setForm({ title: m.title, description: m.description ?? '', category: m.category, level: m.level, duration_minutes: m.duration_minutes, image_url: m.image_url ?? '', rating: m.rating, enrolled: m.enrolled, is_published: m.is_published });

@@ -1,13 +1,10 @@
 'use client';
-/**
- * app/admin/komunitas/page.tsx
- * Admin: Manajemen Artikel Komunitas
- */
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { BookOpen, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, Eye, EyeOff } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
+import { dummyArticles } from '@/lib/dummy-data';
+
 
 type Article = {
   id: string; title: string; excerpt: string | null; content: string | null;
@@ -19,8 +16,8 @@ const EMPTY = { title: '', excerpt: '', content: '', category: 'Umum', author: '
 export default function AdminKomunitasPage() {
   const t = useTranslations('admin_komunitas');
   
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [articles, setArticles] = useState<Article[]>(dummyArticles as any[]);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -28,35 +25,33 @@ export default function AdminKomunitasPage() {
   const [error, setError] = useState('');
 
   async function load() {
-    setLoading(true);
-    if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from('articles').select('*').order('created_at', { ascending: false });
-    setArticles(data ?? []);
-    setLoading(false);
+    // no-op for static demo
   }
 
   useEffect(() => { load(); }, []);
 
   async function save() {
-    if (!supabase || !form.title) return;
+    if (!form.title) return;
     setSaving(true); setError('');
-    const { error: err } = editId
-      ? await supabase.from('articles').update(form).eq('id', editId)
-      : await supabase.from('articles').insert(form);
-    setSaving(false);
-    if (err) { setError(err.message); return; }
-    setShowForm(false); setEditId(null); setForm(EMPTY); load();
+    setTimeout(() => {
+      if (editId) {
+        setArticles(prev => prev.map(a => a.id === editId ? { ...a, ...form } as any : a));
+      } else {
+        setArticles(prev => [{ id: Math.random().toString(), created_at: new Date().toISOString(), ...form } as any, ...prev]);
+      }
+      setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
+    }, 500);
   }
 
   async function del(id: string) {
-    if (!supabase || !confirm(t('confirm_delete'))) return;
-    await supabase.from('articles').delete().eq('id', id); load();
+    if (!confirm(t('confirm_delete'))) return;
+    setArticles(prev => prev.filter(a => a.id !== id));
   }
 
   async function togglePublish(id: string, current: boolean) {
-    if (!supabase) return;
-    await supabase.from('articles').update({ is_published: !current }).eq('id', id); load();
+    setArticles(prev => prev.map(a => a.id === id ? { ...a, is_published: !current } : a));
   }
+
 
   function startEdit(a: Article) {
     setForm({ title: a.title, excerpt: a.excerpt ?? '', content: a.content ?? '', category: a.category, author: a.author, image_url: a.image_url ?? '', is_published: a.is_published });

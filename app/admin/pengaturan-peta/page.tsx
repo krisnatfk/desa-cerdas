@@ -50,13 +50,13 @@ export default function AdminMapSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  // Load existing settings from API
+  // Load existing settings from API (Simulated)
   useEffect(() => {
-    fetch('/api/settings')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setSettings({ ...DEFAULT, ...d }); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const timer = setTimeout(() => {
+      setSettings(DEFAULT);
+      setLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   function handleChange(key: keyof Settings, value: unknown) {
@@ -68,12 +68,8 @@ export default function AdminMapSettingsPage() {
     setSaving(true);
     setStatus('idle');
     try {
-      const res = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
-      });
-      setStatus(res.ok ? 'success' : 'error');
+      await new Promise(r => setTimeout(r, 800)); // Simulasi API
+      setStatus('success');
     } catch {
       setStatus('error');
     } finally {

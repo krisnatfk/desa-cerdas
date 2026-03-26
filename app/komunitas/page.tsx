@@ -1,35 +1,15 @@
 'use client';
-/**
- * app/komunitas/page.tsx — Live Supabase Data
- */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { ThumbsUp, MessageCircle, Book, Users, Loader2 } from 'lucide-react';
-import { CardGridSkeleton } from '@/components/ui/Skeletons';
-import { supabase } from '@/lib/supabase';
+import { MessageCircle, Book } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-
-type Article = {
-  id: string; title: string; excerpt: string | null; category: string;
-  author: string; image_url: string | null; created_at: string;
-};
+import { dummyArticles } from '@/lib/dummy-data';
 
 export default function KomunitasPage() {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [articles] = useState(dummyArticles);
   const [tab, setTab] = useState<'diskusi' | 'artikel'>('artikel');
   const t = useTranslations('community');
   const locale = useLocale();
-
-  useEffect(() => {
-    async function load() {
-      if (!supabase) { setLoading(false); return; }
-      const { data } = await supabase.from('articles').select('id, title, excerpt, category, author, image_url, created_at').eq('is_published', true).order('created_at', { ascending: false });
-      setArticles(data ?? []);
-      setLoading(false);
-    }
-    load();
-  }, []);
 
   function getRelativeTime(dateStr: string) {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -39,6 +19,7 @@ export default function KomunitasPage() {
     if (days < 7) return t('days_ago', { days });
     return new Date(dateStr).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US');
   }
+
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-24">
@@ -58,13 +39,10 @@ export default function KomunitasPage() {
       </div>
 
       {tab === 'artikel' && (
-        loading ? (
-          <CardGridSkeleton count={6} cols={3} />
-        ) : (
-          <div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {articles.map(article => (
-                <article key={article.id} className="group cursor-pointer">
+                <Link href={`/komunitas/${article.id}`} key={article.id} className="group cursor-pointer block">
                   {article.image_url ? (
                     <div className="relative aspect-square mb-4 overflow-hidden bg-gray-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -79,17 +57,10 @@ export default function KomunitasPage() {
                     <h3 className="font-bold text-primary-950 text-sm leading-snug mb-4 group-hover:text-primary-600 transition-colors">{article.title}</h3>
                     <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{new Date(article.created_at).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
-            {articles.length === 0 && (
-              <div className="text-center py-16">
-                <div className="w-14 h-14 bg-gray-100 flex items-center justify-center mx-auto mb-3"><Book className="w-7 h-7 text-gray-400" /></div>
-                <p className="font-semibold text-gray-700">{t('no_articles')}</p>
-              </div>
-            )}
-          </div>
-        )
+        </div>
       )}
 
       {tab === 'diskusi' && (

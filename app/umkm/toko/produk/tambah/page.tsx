@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ArrowLeft, X, UploadCloud, Sparkles } from 'lucide-react';
@@ -22,13 +21,9 @@ const authenticator = async () => {
 };
 
 function ProductForm() {
-  const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
-
-  const [store, setStore] = useState<any>(null);
-  const [loadingConfig, setLoadingConfig] = useState(true);
   
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -38,65 +33,23 @@ function ProductForm() {
   });
 
   useEffect(() => {
-    async function init() {
-      if (!user) return;
-      try {
-        const storeRes = await fetch('/api/stores');
-        const stores = await storeRes.json();
-        const myStore = Array.isArray(stores) ? stores.find((s: any) => s.user_id === user.id) : null;
-        if (myStore) setStore(myStore);
-
-        if (editId && myStore) {
-          const prodRes = await fetch(`/api/products?store_id=${myStore.id}`);
-          const prods = await prodRes.json();
-          const p = prods.find((p: any) => p.id === editId);
-          if (p) {
-            setFormData({
-              name: p.name, description: p.description || '', price: String(p.price),
-              category: p.category || 'Makanan', image_url: p.image_url || '',
-              phone_number: p.phone_number || '', stock: String(p.stock ?? 10),
-            });
-          }
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoadingConfig(false);
-      }
+    // In a real app we would load the product here.
+    // For semi-dynamic mode, we'll just mock it if editId is provided.
+    if (editId) {
+       setFormData({
+          name: 'Produk Dummy (Edit)', description: 'Deskripsi dummy', price: '15000',
+          category: 'Makanan', image_url: 'https://picsum.photos/seed/dummy/400/300',
+          phone_number: '6281234567890', stock: '20'
+       });
     }
-    init();
-  }, [user, editId]);
+  }, [editId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!store) return;
     setSaving(true);
-    const payload = {
-      ...formData,
-      price: Number(formData.price), stock: Number(formData.stock),
-      store_id: store.id, seller_name: store.name,
-    };
-
-    try {
-      if (editId) {
-        await fetch(`/api/products`, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: editId, ...payload }),
-        });
-      } else {
-        await fetch('/api/products', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      }
-      router.push('/umkm/toko/produk');
-    } catch (e) {
-      console.error(e);
-      setSaving(false);
-    }
+    await new Promise(r => setTimeout(r, 800)); // Simulate save
+    router.push('/umkm/toko/produk');
   }
-
-  if (loadingConfig) return <div className="flex justify-center p-20"><Loader2 className="w-8 h-8 animate-spin text-primary-600" /></div>;
 
   return (
     <div className="max-w-3xl mx-auto pb-10">
@@ -201,7 +154,7 @@ function ProductForm() {
           {isGeneratingAI && (
             <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-center gap-3 animate-pulse">
               <div className="bg-white p-2 rounded-lg border border-indigo-100 shrink-0 shadow-sm">
-                <Sparkles className="w-5 h-5 text-indigo-600" />
+                 <Sparkles className="w-5 h-5 text-indigo-600" />
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-800 mb-0.5">Asisten AI Sedang Bekerja</p>

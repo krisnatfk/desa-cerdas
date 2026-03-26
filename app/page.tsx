@@ -1,46 +1,29 @@
-/**
- * app/page.tsx — Landing Page
- * Designed to strictly match the "Social Foundation" reference UI.
- */
 'use client';
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   MessageSquare, Bot, ShoppingBag, 
   GraduationCap, Users, ShieldCheck,
-  Briefcase, Loader2
+  Briefcase
 } from 'lucide-react';
 import { AnimatedSection } from '@/components/ui/AnimatedSection';
 import { ReportCard } from '@/components/ui/ReportCard';
-import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
+import { dummyReports, dummyStats } from '@/lib/dummy-data';
+
 
 export default function HomePage() {
   const t = useTranslations('home');
-  const [latestReports, setLatestReports] = useState<any[]>([]);
-  const [loadingReports, setLoadingReports] = useState(true);
-  const [stats, setStats] = useState({ reports: 0, products: 0, resolved: 0 });
+  const latestReports = dummyReports.slice(0, 4);
+  const stats = {
+    reports: dummyStats.totalReports,
+    products: dummyStats.activeUMKM,
+    resolved: dummyStats.completedReports,
+  };
 
-  useEffect(() => {
-    fetch('/api/reports')
-      .then((res) => res.json())
-      .then((data) => {
-        setLatestReports(Array.isArray(data) ? data.slice(0, 4) : []);
-      })
-      .catch(() => setLatestReports([]))
-      .finally(() => setLoadingReports(false));
 
-    fetch('/api/stats')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && typeof data.reports === 'number') {
-          setStats(data);
-        }
-      })
-      .catch((err) => console.error('Failed to load stats', err));
-  }, []);
 
   return (
     <div className="flex flex-col w-full overflow-hidden bg-bg">
@@ -65,18 +48,18 @@ export default function HomePage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
             </div>
-            
-            {/* Minimalist Floating Badge 1 (Adjusted for mobile) */}
-            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 lg:translate-x-0 lg:-bottom-8 lg:-left-12 bg-white/95 backdrop-blur-md px-4 py-3 lg:px-6 lg:py-5 rounded-2xl shadow-xl border border-black/5 flex items-center justify-center gap-3 lg:gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 pointer-events-none z-20 w-[90%] sm:w-max">
-              <div className="bg-green-50 p-2 lg:p-3 rounded-xl border border-green-100 shrink-0">
-                <ShieldCheck className="w-5 h-5 lg:w-6 lg:h-6 text-green-600" />
+
+            {/* Minimalist Floating Badge (Repositioned to top-right on mobile, right-middle on desktop) */}
+            <div className="absolute top-4 right-4 lg:top-1/2 lg:-translate-y-1/2 lg:-right-8 lg:bottom-auto bg-white/90 backdrop-blur-md px-3 py-2 lg:px-5 lg:py-4 rounded-xl lg:rounded-2xl shadow-xl lg:shadow-2xl border border-white/50 flex items-center gap-2 lg:gap-4 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300 pointer-events-none z-20">
+              <div className="bg-primary-50/80 p-1.5 lg:p-2.5 rounded-full border border-primary-100/50 shrink-0">
+                <ShieldCheck className="w-3.5 h-3.5 lg:w-5 lg:h-5 text-primary-600" />
               </div>
-              <div className="text-left w-full sm:w-auto">
-                <p className="text-[9px] lg:text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5 whitespace-nowrap">{t('hero.badge_2_title')}</p>
-                <p className="text-[12px] lg:text-sm font-bold text-gray-800 whitespace-nowrap">{t('hero.badge_2_desc')}</p>
+              <div className="text-left">
+                <p className="text-[7px] lg:text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">{t('hero.badge_2_title')}</p>
+                <p className="text-[9px] lg:text-[12px] font-bold text-gray-800">{t('hero.badge_2_desc')}</p>
               </div>
             </div>
-
+            
             {/* Aesthetic Dot Pattern Decorator */}
             <div className="absolute -top-6 -right-6 w-32 h-32 bg-[radial-gradient(#d1d5db_1.5px,transparent_1.5px)] [background-size:12px_12px] opacity-60 z-0 hidden md:block" />
           </div>
@@ -95,11 +78,11 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 w-full sm:w-auto">
               {/* Primary Button */}
-              <Link href="/laporan" className="flex items-center justify-center px-8 py-3.5 text-xs lg:text-sm font-bold tracking-wide uppercase rounded-full transition-all duration-300 w-full sm:w-auto text-center shadow-md hover:-translate-y-0.5 bg-primary-900 hover:bg-primary-950 text-white shadow-primary-900/20 border border-transparent">
+              <Link href="/laporan" className="flex items-center justify-center px-8 py-3.5 text-xs lg:text-sm font-bold rounded-full transition-all duration-300 w-full sm:w-auto text-center shadow-md hover:-translate-y-0.5 bg-primary-900 hover:bg-primary-950 text-white shadow-primary-900/20 border border-transparent">
                 {t('hero.cta_report')}
               </Link>
               {/* Secondary Button */}
-              <Link href="/umkm" className="flex items-center justify-center px-8 py-3.5 text-xs lg:text-sm font-bold tracking-wide uppercase rounded-full transition-all duration-300 w-full sm:w-auto text-center shadow-sm hover:-translate-y-0.5 bg-white hover:bg-gray-50 text-gray-700 hover:text-primary-900 shadow-black/5 border border-gray-200">
+              <Link href="/umkm" className="flex items-center justify-center px-8 py-3.5 text-xs lg:text-sm font-bold rounded-full transition-all duration-300 w-full sm:w-auto text-center shadow-sm hover:-translate-y-0.5 bg-white hover:bg-gray-50 text-gray-700 hover:text-primary-900 shadow-black/5 border border-gray-200">
                 {t('hero.cta_marketplace')}
               </Link>
             </div>
@@ -374,13 +357,7 @@ export default function HomePage() {
             </Link>
           </AnimatedSection>
 
-          {loadingReports ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <CardGridSkeleton key={i} count={1} cols={1} />
-              ))}
-            </div>
-          ) : latestReports.length === 0 ? (
+          {latestReports.length === 0 ? (
             <div className="text-center py-16 text-gray-400 text-sm">Belum ada laporan.</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
